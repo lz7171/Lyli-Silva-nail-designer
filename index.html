@@ -1,0 +1,302 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Lyli Silva Nail Designer | Agendamento</title>
+<meta name="description" content="Agende seu horário com Lyli Silva Nail Designer. Atendimento de terça a sábado.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Allura&family=Jost:wght@200;300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f0efeb;--ink:#141827;--mut:#666a76;--line:#d8d6cf;--soft:#e7e5df;box-sizing:border-box}
+*,*::before,*::after{box-sizing:inherit}
+html{scroll-behavior:smooth}
+body{margin:0;background:var(--bg);color:var(--ink);font:300 17px/1.6 "Jost",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+main{max-width:640px;margin:0 auto;padding:0 22px 40px}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+
+.hero{text-align:center;padding:72px 0 56px;border-bottom:1px solid var(--line)}
+.ls{font-weight:200;font-size:96px;line-height:.9;letter-spacing:-6px;margin:0 0 6px 0}
+.nome{font-family:"Allura",cursive;font-size:56px;line-height:1.1;margin:0}
+.sub{margin:6px 0 0;font-size:13px;letter-spacing:.6em;text-indent:.6em;font-weight:400}
+.hero p.lead{margin:34px auto 26px;max-width:30ch;color:var(--mut)}
+.btn{display:inline-block;background:var(--ink);color:var(--bg);border:0;padding:15px 34px;text-decoration:none;font-weight:400;letter-spacing:.04em;cursor:pointer;transition:opacity .2s}
+.btn:hover{opacity:.85}
+.btn[disabled]{opacity:.4;cursor:not-allowed}
+.btn.line{background:transparent;color:var(--ink);border:1px solid var(--ink)}
+
+section{padding:48px 0 0}
+h2{font-family:"Allura",cursive;font-weight:400;font-size:40px;line-height:1.1;margin:0 0 4px}
+.dica{margin:0 0 20px;color:var(--mut);font-size:15px}
+.passo{margin-top:34px}
+.passo>b{display:block;font-weight:500;margin-bottom:12px}
+
+.dias{display:grid;grid-template-columns:repeat(auto-fill,minmax(68px,1fr));gap:8px}
+.dia,.hora{background:transparent;border:1px solid var(--line);cursor:pointer;text-align:center;transition:background .15s,color .15s,border-color .15s}
+.dia{padding:10px 4px;line-height:1.25}
+.dia small{display:block;color:var(--mut);font-size:13px}
+.dia strong{display:block;font-size:22px;font-weight:400}
+.hora{padding:16px 6px;font-size:19px}
+.horas{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.dia:hover,.hora:hover:not(:disabled){border-color:var(--ink)}
+.dia[aria-pressed=true],.hora[aria-pressed=true]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.dia[aria-pressed=true] small{color:#b9bcc8}
+.hora:disabled{color:#a3a5ab;text-decoration:line-through;cursor:not-allowed;background:var(--soft);border-color:var(--soft)}
+
+input{width:100%;background:transparent;border:0;border-bottom:1px solid var(--ink);padding:12px 0;font-size:18px;border-radius:0}
+input::placeholder{color:#9a9ca3}
+#msg{min-height:1.6em;margin:14px 0 0;font-size:15px;color:#7a1f1f}
+#enviar{width:100%;margin-top:10px;padding:18px}
+.ok{text-align:center;padding:36px 20px;border:1px solid var(--ink)}
+.ok h3{font-family:"Allura",cursive;font-weight:400;font-size:38px;margin:0 0 6px}
+.ok p{margin:0 0 18px;color:var(--mut)}
+[hidden]{display:none!important}
+
+.info{display:grid;gap:26px}
+.info div{border-top:1px solid var(--line);padding-top:16px}
+.info b{display:block;font-weight:500}
+.info span{color:var(--mut)}
+.info a{color:var(--ink)}
+footer{text-align:center;color:var(--mut);font-size:14px;padding-top:56px}
+.dia.fora{border-style:dashed}
+.aviso{margin:0 0 12px;font-size:15px;color:var(--mut)}
+.fotos{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.fotos img{width:100%;aspect-ratio:1;object-fit:cover;display:block;background:var(--soft)}
+.nota{font-size:30px;font-weight:200;margin:0 0 6px}
+.rev{border-top:1px solid var(--line);padding:18px 0}
+.rev p{margin:6px 0 0}
+.rev small{color:var(--mut)}
+.gnote{color:var(--mut);font-size:13px;margin:8px 0 0}
+.gnote a{color:var(--ink)}
+@media(min-width:560px){.ls{font-size:120px}.nome{font-size:72px}}
+@media(prefers-reduced-motion:reduce){*{transition:none!important;scroll-behavior:auto!important}}
+</style>
+</head>
+<body>
+<main>
+
+<header class="hero">
+  <h1 style="margin:0">
+    <span class="ls" style="display:block" aria-hidden="true">LS</span>
+    <span class="nome" style="display:block">Lyli Silva</span>
+    <span class="sub" style="display:block">NAIL DESIGNER</span>
+  </h1>
+  <p class="lead">Escolha o dia e o horário e confirme direto no WhatsApp.</p>
+  <a class="btn" href="#agendar">Agendar horário</a>
+</header>
+
+<section id="agendar">
+  <h2>Agendamento</h2>
+  <p class="dica">Atendimento regular de terça a sábado. Domingo e segunda também podem ser solicitados, e a Lyli confirma pelo WhatsApp.</p>
+
+  <div id="form">
+    <div class="passo">
+      <b>Escolha o dia</b>
+      <div class="dias" id="dias"></div>
+    </div>
+
+    <div class="passo" id="pHora" hidden>
+      <b>Escolha o horário</b>
+      <p class="aviso" id="aviso" hidden></p>
+      <div class="horas" id="horas"></div>
+    </div>
+
+    <div class="passo" id="pNome" hidden>
+      <b>Seu nome</b>
+      <input id="nome" type="text" placeholder="Digite seu nome" autocomplete="name" maxlength="60">
+    </div>
+
+    <p id="msg" role="alert"></p>
+    <button class="btn" id="enviar" disabled>Confirmar pelo WhatsApp</button>
+  </div>
+
+  <div class="ok" id="ok" hidden>
+    <h3>Horário reservado</h3>
+    <p>Se o WhatsApp não abrir sozinho, toque no botão abaixo para enviar sua confirmação.</p>
+    <a class="btn" id="zap" href="#" target="_blank" rel="noopener">Abrir WhatsApp</a>
+  </div>
+</section>
+
+<section id="fotos" hidden>
+  <h2>Fotos</h2>
+  <div class="fotos" id="fotosBox"></div>
+</section>
+
+<section id="avals" hidden>
+  <h2>Avaliações</h2>
+  <p class="nota" id="nota"></p>
+  <div id="avBox"></div>
+  <p class="gnote">Fotos e avaliações do <a href="https://maps.app.goo.gl/cFfbbowAwcHpBYVq6?g_st=iw" target="_blank" rel="noopener">Google Maps</a></p>
+</section>
+
+<section>
+  <h2>Informações</h2>
+  <div class="info">
+    <div><b>Horários de atendimento</b><span>Terça a sábado, às 9h30, 14h e 18h. Domingo e segunda: sob confirmação pelo WhatsApp.</span></div>
+    <div><b>Localização</b><a href="https://maps.app.goo.gl/cFfbbowAwcHpBYVq6?g_st=iw" target="_blank" rel="noopener">Ver no Google Maps</a></div>
+    <div><b>WhatsApp</b><a href="https://wa.me/5521968513808" target="_blank" rel="noopener">(21) 96851-3808</a></div>
+  </div>
+</section>
+
+<footer>Lyli Silva Nail Designer</footer>
+</main>
+
+<script>
+const WA = "5521968513808";
+const TIMES = ["09:30", "14:00", "18:00"];
+const $ = (id) => document.getElementById(id);
+const pad = (n) => String(n).padStart(2, "0");
+const iso = (d) => `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+const rotulo = (t) => (t === "09:30" ? "9h30" : t.slice(0, 2) + "h");
+const fora = (s) => new Date(s + "T12:00:00").getDay() < 2; // domingo e segunda
+let sel = { date: null, time: null };
+
+async function api(url, opt) {
+  try {
+    const r = await fetch(url, opt);
+    let j;
+    try { j = await r.json(); } catch (e) { j = { error: "Backend não encontrado. Confira se api/agenda.js está no GitHub e refaça o deploy." }; }
+    return { r, j };
+  } catch (e) {
+    return { r: { ok: false, status: 0 }, j: { error: "Sem conexão. Verifique a internet e tente de novo." } };
+  }
+}
+function msg(t) { $("msg").textContent = t || ""; }
+function pronto() { $("enviar").disabled = !(sel.date && sel.time && $("nome").value.trim().length >= 2); }
+
+// Próximos 14 dias (todos podem receber pedido de agendamento)
+(function montarDias() {
+  for (let i = 0; i < 14; i++) {
+    const d = new Date();
+    d.setDate(d.getDate() + i);
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "dia" + (d.getDay() < 2 ? " fora" : "");
+    b.setAttribute("aria-pressed", "false");
+    b.dataset.date = iso(d);
+    const sem = d.toLocaleDateString("pt-BR", { weekday: "short" }).replace(".", "");
+    const mes = d.toLocaleDateString("pt-BR", { month: "short" }).replace(".", "");
+    b.innerHTML = `<small>${sem}</small><strong>${d.getDate()}</strong><small>${mes}</small>`;
+    b.onclick = () => escolherDia(b);
+    $("dias").appendChild(b);
+  }
+})();
+
+async function escolherDia(b) {
+  document.querySelectorAll(".dia").forEach((x) => x.setAttribute("aria-pressed", "false"));
+  b.setAttribute("aria-pressed", "true");
+  sel = { date: b.dataset.date, time: null };
+  $("pNome").hidden = true;
+  pronto();
+  await carregarHorarios();
+}
+
+async function carregarHorarios() {
+  const box = $("horas");
+  $("pHora").hidden = false;
+  $("aviso").hidden = !fora(sel.date);
+  $("aviso").textContent = "Dia fora do atendimento regular. A Lyli confirma a disponibilidade pelo WhatsApp.";
+  box.innerHTML = "<span style='color:var(--mut)'>Carregando horários...</span>";
+  msg("");
+  const { r, j } = await api("/api/agenda?date=" + sel.date, { cache: "no-store" });
+  if (!r.ok) { box.innerHTML = ""; msg(j.error || "Não foi possível carregar os horários."); return; }
+  const taken = j.taken || [];
+  const agora = new Date();
+  const hoje = iso(agora) === sel.date;
+  const min = agora.getHours() * 60 + agora.getMinutes();
+  box.innerHTML = "";
+  TIMES.forEach((t) => {
+    const [h, m] = t.split(":").map(Number);
+    const b = document.createElement("button");
+    b.type = "button";
+    b.className = "hora";
+    b.textContent = rotulo(t);
+    b.setAttribute("aria-pressed", "false");
+    b.disabled = taken.includes(t) || (hoje && h * 60 + m <= min);
+    b.onclick = () => {
+      box.querySelectorAll(".hora").forEach((x) => x.setAttribute("aria-pressed", "false"));
+      b.setAttribute("aria-pressed", "true");
+      sel.time = t;
+      $("pNome").hidden = false;
+      pronto();
+    };
+    box.appendChild(b);
+  });
+  if ([...box.children].every((x) => x.disabled)) msg("Sem horários livres nesse dia. Escolha outro dia.");
+}
+
+$("nome").addEventListener("input", pronto);
+
+$("enviar").onclick = async () => {
+  const nome = $("nome").value.trim();
+  const btn = $("enviar");
+  msg("");
+  btn.disabled = true;
+  btn.textContent = "Reservando...";
+  const { r, j } = await api("/api/agenda", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ date: sel.date, time: sel.time, name: nome }),
+  });
+  btn.textContent = "Confirmar pelo WhatsApp";
+  if (r.status === 409) {
+    sel.time = null;
+    $("pNome").hidden = true;
+    await carregarHorarios();
+    msg("Esse horário acabou de ser reservado por outra cliente. Escolha outro.");
+    pronto();
+    return;
+  }
+  if (!r.ok) { msg(j.error || "Não foi possível reservar agora."); pronto(); return; }
+
+  const data = new Date(sel.date + "T12:00:00").toLocaleDateString("pt-BR", {
+    weekday: "long", day: "2-digit", month: "long", year: "numeric",
+  });
+  const texto =
+    `Olá, Lyli! Gostaria de confirmar meu agendamento:\n\n` +
+    `*Nome:* ${nome}\n*Data:* ${data}\n*Horário:* ${rotulo(sel.time)}` +
+    (fora(sel.date) ? `\n\n_Obs.: dia fora do atendimento regular, pode confirmar a disponibilidade?_` : "") +
+    `\n\nObrigada!`;
+  const url = `https://wa.me/${WA}?text=${encodeURIComponent(texto)}`;
+  $("zap").href = url;
+  $("form").hidden = true;
+  $("ok").hidden = false;
+  $("ok").scrollIntoView({ behavior: "smooth", block: "center" });
+  window.location.href = url;
+};
+
+// Fotos e avaliações do Google Maps (aparecem quando o backend estiver configurado)
+(async function google() {
+  const { r, j } = await api("/api/google");
+  if (!r.ok || !j.disponivel) return;
+  if (j.fotos > 0) {
+    for (let i = 0; i < j.fotos; i++) {
+      const img = document.createElement("img");
+      img.src = "/api/google?foto=" + i;
+      img.alt = "Foto do trabalho de Lyli Silva Nail Designer";
+      img.loading = "lazy";
+      $("fotosBox").appendChild(img);
+    }
+    $("fotos").hidden = false;
+  }
+  if (j.reviews && j.reviews.length) {
+    if (j.rating) $("nota").textContent = `${String(j.rating.toFixed(1)).replace(".", ",")} de 5, com ${j.total} avaliações no Google`;
+    j.reviews.forEach((v) => {
+      const d = document.createElement("div");
+      d.className = "rev";
+      const n = Math.max(0, Math.min(5, Math.round(v.nota || 5)));
+      const t = document.createElement("small");
+      t.textContent = `${"★".repeat(n)}${"☆".repeat(5 - n)}  ${v.autor || ""}${v.quando ? ", " + v.quando : ""}`;
+      const p = document.createElement("p");
+      p.textContent = v.texto;
+      d.append(t, p);
+      $("avBox").appendChild(d);
+    });
+    $("avals").hidden = false;
+  }
+})();
+</script>
+</body>
+</html>
