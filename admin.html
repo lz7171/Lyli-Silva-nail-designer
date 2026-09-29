@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Agenda | Lyli Silva Nail Designer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Allura&family=Jost:wght@200;300;400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#f0efeb;--ink:#141827;--mut:#666a76;--line:#d8d6cf;--soft:#e7e5df;box-sizing:border-box}
+*,*::before,*::after{box-sizing:inherit}
+body{margin:0;background:var(--bg);color:var(--ink);font:300 17px/1.6 "Jost",system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+main{max-width:560px;margin:0 auto;padding:56px 22px 60px}
+button,input{font:inherit;color:inherit}
+:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+h1{font-family:"Allura",cursive;font-weight:400;font-size:44px;margin:0 0 4px;text-align:center}
+.sub{text-align:center;color:var(--mut);font-size:14px;letter-spacing:.2em;text-transform:uppercase;margin:0 0 40px}
+.btn{display:inline-block;background:var(--ink);color:var(--bg);border:0;padding:14px 28px;font-weight:400;letter-spacing:.03em;cursor:pointer;transition:opacity .2s}
+.btn:hover{opacity:.85}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.btn.out{background:transparent;color:var(--ink);border:1px solid var(--ink);padding:9px 18px;font-size:14px}
+input[type=password]{width:100%;background:transparent;border:0;border-bottom:1px solid var(--ink);padding:12px 0;font-size:18px;margin-bottom:20px;border-radius:0}
+input::placeholder{color:#9a9ca3}
+[hidden]{display:none!important}
+#erro{color:#7a1f1f;font-size:15px;margin:0 0 16px;min-height:1.4em}
+.topo{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px}
+.topo span{color:var(--mut);font-size:14px}
+.dia{margin-bottom:30px}
+.dia h2{font-size:15px;font-weight:500;margin:0 0 10px;border-bottom:1px solid var(--line);padding-bottom:8px}
+.dia h2::first-letter{text-transform:uppercase}
+.linha{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0;border-bottom:1px solid var(--soft)}
+.linha .hr{font-weight:500;min-width:52px}
+.linha .nome{flex:1}
+.linha button{background:none;border:1px solid var(--line);color:var(--mut);padding:6px 12px;font-size:13px;cursor:pointer}
+.linha button:hover{border-color:#7a1f1f;color:#7a1f1f}
+.vazio{text-align:center;color:var(--mut);padding:40px 0}
+.carregando{text-align:center;color:var(--mut);padding:40px 0}
+</style>
+</head>
+<body>
+<main>
+  <h1>Agenda</h1>
+  <p class="sub">Lyli Silva Nail Designer</p>
+
+  <section id="login">
+    <p id="erro"></p>
+    <input id="senha" type="password" placeholder="Senha" autocomplete="current-password">
+    <button class="btn" id="entrar" style="width:100%">Entrar</button>
+  </section>
+
+  <section id="painel" hidden>
+    <div class="topo">
+      <span id="contagem"></span>
+      <div>
+        <button class="btn out" id="atualizar">Atualizar</button>
+        <button class="btn out" id="sair">Sair</button>
+      </div>
+    </div>
+    <div id="lista"></div>
+  </section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const rotulo = (t) => (t === "09:30" ? "9h30" : t.slice(0, 2) + "h");
+let SENHA = sessionStorage.getItem("lyli_admin_pass") || "";
+
+function dataExtensa(s) {
+  return new Date(s + "T12:00:00").toLocaleDateString("pt-BR", {
+    weekday: "long", day: "2-digit", month: "long", year: "numeric",
+  });
+}
+
+async function chamarApi(opt) {
+  const r = await fetch("/api/admin", {
+    ...opt,
+    headers: { "Content-Type": "application/json", "x-admin-pass": SENHA, ...(opt && opt.headers) },
+  });
+  let j = {};
+  try { j = await r.json(); } catch (e) {}
+  return { r, j };
+}
+
+function mostrarPainel() {
+  $("login").hidden = true;
+  $("painel").hidden = false;
+  carregar();
+}
+
+async function entrar() {
+  const tentativa = $("senha").value.trim();
+  if (!tentativa) return;
+  SENHA = tentativa;
+  $("entrar").disabled = true;
+  $("entrar").textContent = "Entrando...";
+  const { r } = await chamarApi({ method: "GET" });
+  $("entrar").disabled = false;
+  $("entrar").textContent = "Entrar";
+  if (r.status === 401) {
+    $("erro").textContent = "Senha incorreta.";
+    return;
+  }
+  if (!r.ok) {
+    $("erro").textContent = "Não foi possível conectar. Tente novamente.";
+    return;
+  }
+  sessionStorage.setItem("lyli_admin_pass", SENHA);
+  mostrarPainel();
+}
+
+$("entrar").onclick = entrar;
+$("senha").addEventListener("keydown", (e) => { if (e.key === "Enter") entrar(); });
+
+$("sair").onclick = () => {
+  sessionStorage.removeItem("lyli_admin_pass");
+  SENHA = "";
+  $("painel").hidden = true;
+  $("login").hidden = false;
+  $("senha").value = "";
+  $("erro").textContent = "";
+};
+
+$("atualizar").onclick = carregar;
+
+async function cancelar(date, time, botao) {
+  if (!confirm(`Cancelar o horário de ${rotulo(time)} em ${dataExtensa(date)}?`)) return;
+  botao.disabled = true;
+  botao.textContent = "Cancelando...";
+  const { r } = await chamarApi({ method: "DELETE", body: JSON.stringify({ date, time }) });
+  if (!r.ok) {
+    botao.disabled = false;
+    botao.textContent = "Cancelar";
+    alert("Não foi possível cancelar agora. Tente de novo.");
+    return;
+  }
+  carregar();
+}
+
+async function carregar() {
+  const box = $("lista");
+  box.innerHTML = "<p class='carregando'>Carregando agenda...</p>";
+  $("contagem").textContent = "";
+  const { r, j } = await chamarApi({ method: "GET" });
+
+  if (r.status === 401) {
+    sessionStorage.removeItem("lyli_admin_pass");
+    SENHA = "";
+    $("painel").hidden = true;
+    $("login").hidden = false;
+    $("erro").textContent = "Sessão expirada. Entre novamente.";
+    return;
+  }
+  if (!r.ok) {
+    box.innerHTML = "<p class='carregando'>Não foi possível carregar a agenda. Toque em Atualizar.</p>";
+    return;
+  }
+
+  const ags = j.agendamentos || [];
+  $("contagem").textContent = ags.length === 1 ? "1 agendamento" : `${ags.length} agendamentos`;
+
+  if (!ags.length) {
+    box.innerHTML = "<p class='vazio'>Nenhum agendamento no momento.</p>";
+    return;
+  }
+
+  const porDia = {};
+  ags.forEach((a) => { (porDia[a.date] = porDia[a.date] || []).push(a); });
+
+  box.innerHTML = "";
+  Object.keys(porDia).sort().forEach((date) => {
+    const sec = document.createElement("div");
+    sec.className = "dia";
+    const h2 = document.createElement("h2");
+    h2.textContent = dataExtensa(date);
+    sec.appendChild(h2);
+    porDia[date].sort((a, b) => a.time.localeCompare(b.time)).forEach((a) => {
+      const linha = document.createElement("div");
+      linha.className = "linha";
+      const hr = document.createElement("span");
+      hr.className = "hr";
+      hr.textContent = rotulo(a.time);
+      const nome = document.createElement("span");
+      nome.className = "nome";
+      nome.textContent = a.name;
+      const btn = document.createElement("button");
+      btn.textContent = "Cancelar";
+      btn.onclick = () => cancelar(a.date, a.time, btn);
+      linha.append(hr, nome, btn);
+      sec.appendChild(linha);
+    });
+    box.appendChild(sec);
+  });
+}
+
+if (SENHA) mostrarPainel();
+</script>
+</body>
+</html>
