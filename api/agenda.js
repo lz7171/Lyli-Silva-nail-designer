@@ -1,2 +1,0 @@
-// Arquivo agenda.js extraído do ZIP
-// Este é um arquivo de exemplo que foi extraído
