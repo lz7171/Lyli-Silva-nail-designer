@@ -17,7 +17,7 @@ export function desenhar() {
 }
 
 function resumo() {
-  const futuros = E.agendamentos.filter((a) => a.date >= E.hoje), limite = somarDiasISO(E.hoje, 7);
+  const futuros = E.agendamentos.filter((a) => a.date >= E.hoje && !a.fechado), limite = somarDiasISO(E.hoje, 7); // horário fechado não é cliente
   const dados = [["Hoje", futuros.filter((a) => a.date === E.hoje).length], ["Próximos 7 dias", futuros.filter((a) => a.date <= limite).length], ["Total futuro", futuros.length]];
   return h("div", { class: "resumo" }, dados.map(([l, n]) => h("div", {}, h("strong", {}, n), h("span", {}, l))));
 }
@@ -40,7 +40,24 @@ function listaSecao() {
     h("div", { class: "ferramentas" }, h("input", { id: "busca", type: "text", placeholder: "Buscar por nome ou telefone...", value: termo, oninput: (e) => { termo = e.target.value; desenhar(); } }), seg), corpo);
 }
 
+function linhaFechada(a) {
+  const acoes = h("span", { class: "acoes" });
+  if (a.date >= E.hoje) {
+    const b = h("button", { type: "button", class: "btn out small" }, "Reabrir");
+    b.onclick = () => ocupado(b, "Reabrindo...", async () => {
+      const { r, j } = await acao({ action: "cancelar", date: a.date, time: a.time });
+      const erro = erroDe(r, j, "Não foi possível reabrir agora.");
+      if (erro) return toast(erro, true);
+      toast(`${rotulo(a.time)} aberto de novo no site.`); recarregar();
+    });
+    acoes.append(b);
+  }
+  return h("div", { class: "linha fechado" }, h("span", { class: "hr" }, rotulo(a.time)),
+    h("span", { class: "info" }, "Horário fechado", h("span", { class: "meta" }, "aparece como ocupado para as clientes")), acoes);
+}
+
 function linha(a) {
+  if (a.fechado) return linhaFechada(a);
   const futuro = a.date >= E.hoje;
   const info = h("span", { class: "info" }, a.name,
     a.lembrado ? h("span", { class: "selo ok" }, "lembrete enviado") : null,
@@ -95,33 +112,53 @@ function manualSecao() {
 }
 
 function bloqueioSecao() {
-  const dia = h("input", { type: "date", min: E.hoje, value: E.hoje });
-  const de = h("input", { type: "date", min: E.hoje, value: E.hoje });
-  const ate = h("input", { type: "date", min: E.hoje, value: E.hoje });
   const msg = h("p", { class: "msg" });
-  const rodar = async (corpo, btn, texto) => ocupado(btn, "Bloqueando...", async () => {
+  const rodar = async (corpo, btn, enquanto, texto) => ocupado(btn, enquanto, async () => {
     msg.className = "msg";
     const { r, j } = await acao(corpo);
-    const erro = erroDe(r, j, "Não foi possível bloquear.");
+    const erro = erroDe(r, j, "Não foi possível fechar.");
     if (erro) { msg.textContent = erro; return; }
     msg.textContent = texto(j); msg.className = "msg ok"; recarregar();
   });
-  const b1 = h("button", { type: "button", class: "btn small" }, "Bloquear dia");
-  b1.onclick = () => {
-    const n = E.agendamentos.filter((a) => a.date === dia.value).length;
-    if (n && !confirm(`Já existem ${n} agendamento(s) nesse dia. Bloquear não cancela os agendamentos, só impede novos. Continuar?`)) return;
-    rodar({ action: "bloquear", date: dia.value }, b1, () => "Dia bloqueado.");
+
+  // um horário de um dia
+  const hora = h("select", {});
+  const montarHoras = (d) => hora.replaceChildren(...horariosDoDia(E.cfg, d || E.hoje).map((t) => h("option", { value: t }, rotulo(t))));
+  const diaH = h("input", { type: "date", min: E.hoje, value: E.hoje, onchange: (e) => e.target.value && montarHoras(e.target.value) });
+  montarHoras(E.hoje);
+  const b0 = h("button", { type: "button", class: "btn small" }, "Fechar horário");
+  b0.onclick = () => {
+    if (!diaH.value) return;
+    rodar({ action: "fecharHorario", date: diaH.value, time: hora.value }, b0, "Fechando...", () => `${rotulo(hora.value)} de ${dataExtensa(diaH.value)} fechado. Para abrir de novo, toque em "Reabrir" na lista acima.`);
   };
-  const b2 = h("button", { type: "button", class: "btn small" }, "Bloquear período");
-  b2.onclick = () => rodar({ action: "bloquearPeriodo", de: de.value, ate: ate.value }, b2, (j) => `${j.total} dia(s) bloqueado(s).`);
+
+  // dia inteiro / período
+  const dia = h("input", { type: "date", min: E.hoje, value: E.hoje });
+  const de = h("input", { type: "date", min: E.hoje, value: E.hoje });
+  const ate = h("input", { type: "date", min: E.hoje, value: E.hoje });
+  const b1 = h("button", { type: "button", class: "btn small" }, "Fechar dia");
+  b1.onclick = () => {
+    const n = E.agendamentos.filter((a) => a.date === dia.value && !a.fechado).length;
+    if (n && !confirm(`Já existem ${n} cliente(s) nesse dia. Fechar o dia não cancela esses horários, só impede novos. Continuar?`)) return;
+    rodar({ action: "bloquear", date: dia.value }, b1, "Fechando...", () => "Dia fechado. Para abrir de novo, toque em \"Reabrir dia\" abaixo.");
+  };
+  const b2 = h("button", { type: "button", class: "btn small" }, "Fechar período");
+  b2.onclick = () => rodar({ action: "bloquearPeriodo", de: de.value, ate: ate.value }, b2, "Fechando...", (j) => `${j.total} dia(s) fechado(s).`);
+
   const lista = h("div", {}, E.bloqueios.length ? E.bloqueios.map((d) => {
-    const b = h("button", { type: "button", class: "btn out small" }, "Desbloquear");
-    b.onclick = () => ocupado(b, "...", async () => { const { r, j } = await acao({ action: "desbloquear", date: d }); const e = erroDe(r, j, "Não foi possível desbloquear."); if (e) return toast(e, true); recarregar(); });
+    const b = h("button", { type: "button", class: "btn out small" }, "Reabrir dia");
+    b.onclick = () => ocupado(b, "...", async () => { const { r, j } = await acao({ action: "desbloquear", date: d }); const e = erroDe(r, j, "Não foi possível reabrir."); if (e) return toast(e, true); toast("Dia aberto de novo no site."); recarregar(); });
     return h("div", { class: "item" }, h("span", {}, dataExtensa(d)), b);
-  }) : h("p", { class: "vazio" }, "Nenhum dia bloqueado."));
-  return h("section", { class: "bloco" }, h("h2", {}, "Bloquear dias"),
-    h("p", { class: "ajuda" }, "Para folgas, viagens ou imprevistos. O dia aparece sem horários no site."),
-    h("div", { class: "linhaForm" }, h("div", {}, h("label", { class: "campo" }, "Um dia"), dia), b1),
+  }) : h("p", { class: "vazio" }, "Nenhum dia fechado."));
+
+  return h("section", { class: "bloco" }, h("h2", {}, "Fechar dias e horários"),
+    h("p", { class: "ajuda" }, "Para folgas, compromissos ou imprevistos. O que estiver fechado aparece como ocupado para as clientes. Dá para abrir de novo a qualquer momento."),
+    h("h3", {}, "Um horário"),
+    h("div", { class: "linhaForm" }, h("div", {}, h("label", { class: "campo" }, "Dia"), diaH), h("div", {}, h("label", { class: "campo" }, "Horário"), hora), b0),
+    h("h3", {}, "Um dia inteiro"),
+    h("div", { class: "linhaForm" }, h("div", {}, h("label", { class: "campo" }, "Dia"), dia), b1),
+    h("h3", {}, "Vários dias"),
     h("div", { class: "linhaForm" }, h("div", {}, h("label", { class: "campo" }, "De"), de), h("div", {}, h("label", { class: "campo" }, "Até"), ate), b2),
-    msg, lista);
+    msg,
+    h("h3", {}, "Dias fechados"), lista);
 }

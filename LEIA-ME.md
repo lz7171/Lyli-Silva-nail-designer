@@ -39,6 +39,16 @@ Prefere preencher antes? Dentro da pasta do site: `gvp admin setup` e `gvp env s
 | Lembrete: "A Wapito recusou o token" | Gere um token novo na Wapito e rode `gvp env set WAPITO_API_TOKEN` e `gvp deploy`. |
 | Lembrete: "não reconheceu o endereço" | Mande ao suporte da Wapito o texto que apareceu e pergunte o endereço e os campos de envio de texto. Depois: `gvp env set WAPITO_SEND_PATH`, `WAPITO_FIELD_PHONE`, `WAPITO_FIELD_TEXT`. |
 
+## Painel — como usar
+
+- Ao entrar aparece só a **Agenda**. As outras partes ficam no botão **☰ Menu** (Horários e dias, Site, Lembretes, Ver o site, Sair).
+- **Horários padrão**: toque no **×** para tirar; para pôr de volta, toque em **+ Adicionar horário** e escolha na lista
+  (ou "Outro horário…" para digitar, ex.: 10h40). Depois toque em **Salvar alterações**.
+  Enquanto não salvar, aparece *"Você tem alterações não salvas"* e um pontinho vermelho no Menu.
+- **Fechar um horário de um dia** (ex.: só a quinta às 14h30): Agenda → *Fechar dias e horários* → *Um horário*.
+  Ele aparece na lista como "Horário fechado", com o botão **Reabrir**. Também dá para fechar um dia inteiro ou vários dias.
+- **Lembretes**: cada cliente recebe **uma** mensagem só (1 dia antes, por volta das 9h, ou no próprio dia).
+
 ## Como funciona o envio pela Wapito
 
 A Wapito não tem documentação pública. Na **primeira** mensagem o sistema testa sozinho os formatos mais

@@ -57,3 +57,13 @@ export function horariosDoDia(cfg, date) {
   const r = (cfg.regras || []).find((x) => dentro(x.de, x.ate));
   return r ? r.times : cfg.times;
 }
+
+// Horários oferecidos no seletor "+ Adicionar horário" (de 15 em 15 minutos, 6h às 22h)
+export const GRADE_HORAS = Array.from({ length: (22 - 6) * 4 + 1 }, (_, i) => pad(6 + Math.floor(i / 4)) + ":" + pad((i % 4) * 15));
+// Entende "10h40", "10:40", "10h", "1040" → "10:40" (ou null se não for um horário)
+export function lerHora(t) {
+  const m = /^\s*(\d{1,2})\s*(?:[:hH.]\s*(\d{2})?|(\d{2}))?\s*$/.exec(String(t || ""));
+  if (!m) return null;
+  const hh = Number(m[1]), mm = Number(m[2] || m[3] || 0);
+  return hh <= 23 && mm <= 59 ? pad(hh) + ":" + pad(mm) : null;
+}

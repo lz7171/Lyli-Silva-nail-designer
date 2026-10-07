@@ -34,6 +34,11 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   assert.strictEqual($("#erroLogin").textContent, "Senha incorreta."); console.log("  ✔ senha errada é recusada");
   dig($("#senha"), "senha-teste-123"); click($("#entrar")); await sleep(100);
   assert.ok(!$("#painel").hidden); console.log("  ✔ login abre o painel");
+  // pedido da cliente: ao entrar, só a agenda; o resto fica num menu escondido (☰)
+  assert.ok(!$("#aba-agenda").hidden && $("#aba-horarios").hidden && $("#aba-site").hidden && $("#aba-lembretes").hidden);
+  assert.ok($("#menu").hidden && !$("#abas")); console.log("  ✔ ao entrar aparece só a Agenda; as outras seções ficam no menu escondido");
+  click($("#menuBtn")); assert.ok(!$("#menu").hidden); click($("#menuBtn")); assert.ok($("#menu").hidden);
+  click($("#menuBtn")); click(w.document.body); assert.ok($("#menu").hidden); console.log("  ✔ menu ☰ abre e fecha (também tocando fora)");
 
   // agenda manual
   const hoje = JSON.parse(JSON.stringify(require("../lib/core").agoraSP())).date;
@@ -46,14 +51,34 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   assert.ok($("#aba-agenda").textContent.includes("Cliente Teste") && $("#aba-agenda").textContent.includes("(21) 98888-7777")); console.log("  ✔ agendamento manual aparece na lista");
 
   // aba horários: adicionar período e salvar
-  click($('[data-aba="horarios"]')); assert.ok(!$("#aba-horarios").hidden);
+  click($("#menuBtn")); click($('[data-aba="horarios"]')); assert.ok(!$("#aba-horarios").hidden && $("#aba-agenda").hidden && $("#menu").hidden);
+  assert.strictEqual($("#abaAtual").textContent, "Horários e dias"); console.log("  ✔ menu leva para Horários e dias");
+  { // reclamação: "fechei um horário e não consegui abrir / colocar horário"
+    const hz = $("#aba-horarios"), chips = () => [...hz.querySelector(".chips").querySelectorAll(".chip")].map((c) => c.firstChild.textContent);
+    assert.deepStrictEqual(chips(), ["9h30", "14h30", "17h"]);
+    click(hz.querySelector('.chip button[aria-label="Remover 14h30"]')); await sleep(10);
+    assert.deepStrictEqual(chips(), ["9h30", "17h"]);
+    assert.ok(hz.querySelector(".rodapeSalvar").classList.contains("pendente") && $('#menu [data-aba="horarios"]').classList.contains("pendente")); console.log("  ✔ tirar um horário mostra o aviso \"alterações não salvas\"");
+    const sel = hz.querySelector(".chips select.addHora"); assert.ok([...sel.options].some((o) => o.value === "14:30"));
+    sel.value = "14:30"; sel.dispatchEvent(new w.Event("change", { bubbles: true })); await sleep(10);
+    assert.deepStrictEqual(chips(), ["9h30", "14h30", "17h"]); assert.ok($("#toast").textContent.includes("Salvar"));
+    assert.ok(!hz.querySelector(".rodapeSalvar").classList.contains("pendente")); console.log("  ✔ colocar o horário de volta funciona escolhendo na lista (e o aviso some: voltou ao salvo)");
+    w.prompt = () => "10h40"; const sel2 = hz.querySelector(".chips select.addHora"); sel2.value = "outro"; sel2.dispatchEvent(new w.Event("change", { bubbles: true })); await sleep(10);
+    assert.deepStrictEqual(chips(), ["9h30", "10h40", "14h30", "17h"]); console.log("  ✔ \"Outro horário…\" aceita horário digitado (10h40)");
+    click([...hz.querySelectorAll("button")].find((b) => b.textContent === "Salvar alterações")); await sleep(150);
+    const salvo = await FakeRedis.prototype.get.call(new FakeRedis(), "lyli:config");
+    assert.deepStrictEqual(salvo.times, ["09:30", "10:40", "14:30", "17:00"]); assert.ok(!$("#aba-horarios .rodapeSalvar").classList.contains("pendente"));
+    console.log("  ✔ salvar grava os horários e tira o aviso");
+    // volta ao normal para os próximos testes
+    click($('#aba-horarios .chip button[aria-label="Remover 10h40"]')); click([...$("#aba-horarios").querySelectorAll("button")].find((b) => b.textContent === "Salvar alterações")); await sleep(150);
+  }
   assert.ok($("#aba-horarios").textContent.includes("Dezembro")); console.log("  ✔ aba Horários mostra o período de Dezembro");
   click([...$("#aba-horarios").querySelectorAll("button")].find((b) => b.textContent === "+ Novo período"));
   click([...$("#aba-horarios").querySelectorAll("button")].find((b) => b.textContent === "Salvar alterações")); await sleep(150);
   assert.ok(!erros.length, erros.join(";")); console.log("  ✔ salvar configuração sem erros");
 
   // aba site: ligar "Sobre", escrever, salvar
-  click($('[data-aba="site"]'));
+  click($("#menuBtn")); click($('[data-aba="site"]'));
   const site = $("#aba-site"); const ta = site.querySelector("textarea"); dig(ta, "Sou a Lyli!");
   const chk = [...site.querySelectorAll("label.marcar")].find((l) => l.textContent.includes("Mostrar")); chk.querySelector("input").checked = true; chk.querySelector("input").dispatchEvent(new w.Event("change"));
   click([...site.querySelectorAll("button")].find((b) => b.textContent.startsWith("Salvar e publicar"))); await sleep(150);
@@ -61,8 +86,23 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   assert.ok(saved && saved.sobre.ativo && saved.sobre.texto === "Sou a Lyli!"); console.log("  ✔ texto do site é salvo");
 
   // lembretes
-  click($('[data-aba="lembretes"]'));
+  click($("#menuBtn")); click($('[data-aba="lembretes"]'));
   assert.ok($("#aba-lembretes").textContent.includes("📅 Data: 08/10/2026")); console.log("  ✔ prévia da mensagem do lembrete");
+  const tl = $("#aba-lembretes").textContent;
+  assert.ok(tl.includes("UM lembrete só") && tl.includes("Não é uma mensagem por dia") && !tl.includes("Todo dia de manhã") && tl.includes("recebe a mensagem na quarta"));
+  const qd = [...$("#aba-lembretes").querySelectorAll("select")][0]; qd.value = "mesmo_dia"; qd.dispatchEvent(new w.Event("change", { bubbles: true }));
+  assert.ok($("#aba-lembretes").textContent.includes("na própria quinta")); console.log("  ✔ texto dos lembretes explica que é 1 mensagem por cliente (com exemplo)");
+  qd.value = "dia_anterior"; qd.dispatchEvent(new w.Event("change", { bubbles: true }));
+
+  // fechar um horário de um dia e reabrir
+  click($("#menuBtn")); click($('[data-aba="agenda"]')); const ag2 = $("#aba-agenda");
+  const sec = [...ag2.querySelectorAll("section")].find((x) => x.querySelector("h2").textContent === "Fechar dias e horários");
+  const dIn = sec.querySelector("input[type=date]"); dig(dIn, d); const hs = sec.querySelector("select"); hs.value = "17:00";
+  click([...sec.querySelectorAll("button")].find((b) => b.textContent === "Fechar horário")); await sleep(150);
+  const fech = [...$("#aba-agenda").querySelectorAll(".linha.fechado")]; assert.strictEqual(fech.length, 1); assert.ok(fech[0].textContent.includes("Horário fechado"));
+  console.log("  ✔ fechar um horário: aparece na agenda como \"Horário fechado\"");
+  click([...fech[0].querySelectorAll("button")].find((b) => b.textContent === "Reabrir")); await sleep(150);
+  assert.strictEqual($("#aba-agenda").querySelectorAll(".linha.fechado").length, 0); console.log("  ✔ \"Reabrir\" abre o horário de novo");
   assert.ok(!erros.length, erros.join(";"));
   console.log("\nTela do painel OK.");
 })().catch((e) => { console.error("\n✖ FALHOU:", e); process.exit(1); });

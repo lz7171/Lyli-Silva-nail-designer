@@ -24,21 +24,25 @@
 
   <div id="painel" hidden>
     <div class="topo">
-      <a class="btn out small" href="/" target="_blank" rel="noopener">Ver o site</a>
+      <button class="btn out small menuBtn" id="menuBtn" type="button" aria-expanded="false" aria-controls="menu">
+        <span class="ico" aria-hidden="true"><i></i><i></i><i></i></span> Menu
+      </button>
+      <span class="abaAtual" id="abaAtual">Agenda</span>
       <span class="grow"></span>
       <button class="btn out small" id="atualizar" type="button">Atualizar</button>
-      <button class="btn out small" id="sair" type="button">Sair</button>
     </div>
-    <nav class="abas" id="abas" role="tablist" aria-label="Seções do painel">
-      <button type="button" role="tab" data-aba="agenda" aria-selected="true">Agenda</button>
-      <button type="button" role="tab" data-aba="horarios" aria-selected="false">Horários e dias</button>
-      <button type="button" role="tab" data-aba="site" aria-selected="false">Site</button>
-      <button type="button" role="tab" data-aba="lembretes" aria-selected="false">Lembretes</button>
+    <nav class="menu" id="menu" aria-label="Seções do painel" hidden>
+      <button type="button" data-aba="agenda" aria-current="page">Agenda</button>
+      <button type="button" data-aba="horarios">Horários e dias</button>
+      <button type="button" data-aba="site">Site</button>
+      <button type="button" data-aba="lembretes">Lembretes</button>
+      <a href="/" target="_blank" rel="noopener">Ver o site</a>
+      <button type="button" id="sair">Sair</button>
     </nav>
-    <div id="aba-agenda" class="painelAba" role="tabpanel"></div>
-    <div id="aba-horarios" class="painelAba" role="tabpanel" hidden></div>
-    <div id="aba-site" class="painelAba" role="tabpanel" hidden></div>
-    <div id="aba-lembretes" class="painelAba" role="tabpanel" hidden></div>
+    <div id="aba-agenda" class="painelAba"></div>
+    <div id="aba-horarios" class="painelAba" hidden></div>
+    <div id="aba-site" class="painelAba" hidden></div>
+    <div id="aba-lembretes" class="painelAba" hidden></div>
   </div>
   <footer>Lyli Silva Nail Designer</footer>
 </main>

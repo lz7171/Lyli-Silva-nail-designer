@@ -1,3 +1,0 @@
-ADMIN_PASSWORD	admin	required	code
-CRON_SECRET	auth	required	code
-WAPITO_API_TOKEN	secret	required	code

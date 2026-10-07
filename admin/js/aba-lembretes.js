@@ -2,12 +2,16 @@
 import { h, dataBR, foneBonito, quando, toast, ocupado } from "./util.js";
 import { acao, erroDe } from "./api.js";
 import { E } from "./estado.js";
+import { vigiar, marcarSalvo } from "./pendente.js";
 
 let raiz, recarregar = () => {};
-export function montar(el, aoSalvar) { raiz = el; recarregar = aoSalvar; desenhar(); }
+export function montar(el, aoSalvar) { raiz = el; recarregar = aoSalvar; vigiar("cfg", el, () => E.cfg); desenhar(); }
 
 const EXEMPLO = { nome: "Maria", data: "08/10/2026", hora: "14:30", dia_semana: "quinta-feira" };
 const previa = (t) => t.replace(/\{(nome|data|hora|dia_semana)\}/g, (m, k) => EXEMPLO[k]);
+const exemploQuando = (q) => q === "mesmo_dia"
+  ? "Exemplo: cliente com horário na quinta às 14h30 recebe a mensagem na própria quinta, por volta das 9h."
+  : "Exemplo: cliente com horário na quinta às 14h30 recebe a mensagem na quarta, por volta das 9h.";
 
 export function desenhar() {
   if (!raiz || !E.cfg) return;
@@ -16,6 +20,7 @@ export function desenhar() {
   const area = h("textarea", { maxlength: "1000", oninput: (e) => { l.msg = e.target.value; pv.textContent = previa(l.msg); } }, l.msg);
   const inserir = (v) => { const a = area, i = a.selectionStart ?? a.value.length; a.setRangeText(v, i, a.selectionEnd ?? i, "end"); a.dispatchEvent(new Event("input")); a.focus(); };
 
+  const exQuando = h("p", { class: "ajuda" }, exemploQuando(l.quando));
   const msg = h("p", { class: "msg" });
   const salvar = h("button", { type: "button", class: "btn wide" }, "Salvar lembretes");
   salvar.onclick = () => ocupado(salvar, "Salvando...", async () => {
@@ -24,7 +29,7 @@ export function desenhar() {
     const { r, j } = await acao({ action: "salvarConfig", cfg: E.cfg });
     const erro = erroDe(r, j, "Não foi possível salvar.");
     if (erro) { msg.textContent = erro; return; }
-    E.cfg = j.cfg; toast("Lembretes salvos."); recarregar();
+    E.cfg = j.cfg; marcarSalvo("cfg"); toast("Lembretes salvos."); recarregar();
   });
 
   // enviar agora
@@ -56,14 +61,15 @@ export function desenhar() {
 
   raiz.replaceChildren(
     h("section", { class: "bloco" }, h("h2", {}, "Lembrete automático para as clientes"),
-      h("p", { class: "ajuda" }, "Todo dia de manhã (9h) o sistema envia o lembrete pelo WhatsApp para as clientes que agendaram e informaram o número. Ninguém recebe duas vezes."),
+      h("p", { class: "ajuda" }, "Cada cliente recebe UM lembrete só, pelo WhatsApp, antes do horário dela. Não é uma mensagem por dia: depois que a cliente recebe, ela não recebe de novo. Só recebe quem informou o WhatsApp no agendamento."),
       h("p", {}, "WhatsApp (Wapito): ", h("span", { class: "estado " + (L.whatsappConfigurado ? "ok" : "ruim") }, L.whatsappConfigurado ? "conectado" : "não configurado")),
       L.whatsappConfigurado ? null : h("p", { class: "ajuda" }, "Falta cadastrar o token da Wapito na Vercel (WAPITO_API_TOKEN). Veja o passo a passo no arquivo LEIA-ME."),
-      h("label", { class: "marcar" }, h("input", { type: "checkbox", checked: l.ativo, onchange: (e) => (l.ativo = e.target.checked) }), "Enviar lembretes automaticamente"),
+      h("label", { class: "marcar" }, h("input", { type: "checkbox", checked: l.ativo, onchange: (e) => (l.ativo = e.target.checked) }), "Enviar lembretes automaticamente (1 por cliente)"),
       h("label", { class: "campo" }, "Quando enviar"),
-      h("select", { onchange: (e) => (l.quando = e.target.value) },
-        h("option", { value: "dia_anterior", selected: l.quando === "dia_anterior" }, "No dia anterior, às 9h"),
-        h("option", { value: "mesmo_dia", selected: l.quando === "mesmo_dia" }, "No mesmo dia, às 9h")),
+      h("select", { onchange: (e) => { l.quando = e.target.value; exQuando.textContent = exemploQuando(l.quando); } },
+        h("option", { value: "dia_anterior", selected: l.quando === "dia_anterior" }, "1 dia antes do horário (por volta das 9h)"),
+        h("option", { value: "mesmo_dia", selected: l.quando === "mesmo_dia" }, "No próprio dia do horário (por volta das 9h)")),
+      exQuando,
       h("label", { class: "campo" }, "Mensagem"), area,
       h("div", { class: "vars" }, [["{data}", "Data"], ["{hora}", "Horário"], ["{nome}", "Nome"], ["{dia_semana}", "Dia da semana"]].map(([v, n]) =>
         h("button", { type: "button", class: "btn out small", onclick: () => inserir(v) }, "+ " + n))),
@@ -71,7 +77,7 @@ export function desenhar() {
       h("div", { class: "rodapeSalvar" }, salvar, msg)),
 
     h("section", { class: "bloco" }, h("h2", {}, "Enviar agora"),
-      h("p", { class: "ajuda" }, "Manda já os lembretes de " + dataBR(L.proximaData) + ". Quem já recebeu não recebe de novo. Para uma cliente só, use o botão \"Lembrar agora\" na aba Agenda."),
+      h("p", { class: "ajuda" }, "Não precisa usar no dia a dia: o envio é automático. Este botão manda já os lembretes de quem tem horário em " + dataBR(L.proximaData) + " (quem já recebeu não recebe de novo). Para uma cliente só, use \"Lembrar agora\" na Agenda."),
       enviar, resultado),
 
     h("section", { class: "bloco" }, h("h2", {}, "Testar o WhatsApp"),

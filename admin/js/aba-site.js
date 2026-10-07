@@ -3,9 +3,10 @@ import { h, toast, ocupado } from "./util.js";
 import { acao, erroDe } from "./api.js";
 import { E } from "./estado.js";
 import { urlFoto, botaoEnviar, escolherFoto } from "./fotos.js";
+import { vigiar, marcarSalvo, pendente } from "./pendente.js";
 
 let raiz, recarregar = () => {};
-export function montar(el, aoSalvar) { raiz = el; recarregar = aoSalvar; desenhar(); }
+export function montar(el, aoSalvar) { raiz = el; recarregar = aoSalvar; vigiar("site", el, () => E.site); desenhar(); }
 
 const campo = (r, el) => h("div", {}, h("label", { class: "campo" }, r), el);
 const texto = (o, k, extra) => h("input", { type: "text", value: o[k] || "", oninput: (e) => (o[k] = e.target.value), ...(extra || {}) });
@@ -63,7 +64,7 @@ export function desenhar() {
           const { r, j } = await acao({ action: "removerFoto", id: m.id });
           const erro = erroDe(r, j, "Não foi possível apagar.");
           if (erro) return toast(erro, true);
-          E.midias = j.midias; E.site.logo = j.site.logo; E.site.galeria.fotos = j.site.galeria.fotos; desenhar();
+          const tinha = pendente("site"); E.midias = j.midias; E.site.logo = j.site.logo; E.site.galeria.fotos = j.site.galeria.fotos; if (!tinha) marcarSalvo("site"); desenhar();
         });
         return h("div", { class: "foto" }, h("img", { src: urlFoto(m.id), alt: m.nome, loading: "lazy" }), x);
       })) : h("p", { class: "vazio" }, "Nenhuma foto enviada ainda."));
@@ -87,7 +88,7 @@ export function desenhar() {
     const { r, j } = await acao({ action: "salvarSite", site: s });
     const erro = erroDe(r, j, "Não foi possível salvar.");
     if (erro) { msg.textContent = erro; return; }
-    E.site = j.site; toast("Salvo! Em até 20 segundos aparece no site."); recarregar();
+    E.site = j.site; marcarSalvo("site"); toast("Salvo! Em até 20 segundos aparece no site."); recarregar();
   });
 
   raiz.replaceChildren(

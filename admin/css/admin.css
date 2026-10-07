@@ -35,9 +35,18 @@ label.campo{display:block;font-size:13px;color:var(--mut);margin-bottom:2px}
 #login{max-width:340px;margin:50px auto 0}
 #erroLogin{color:var(--red);font-size:15px;margin:0 0 14px;min-height:1.4em}
 .topo{display:flex;align-items:center;gap:8px;margin-bottom:16px}
-.abas{display:flex;gap:6px;overflow-x:auto;border-bottom:1px solid var(--line);margin-bottom:24px;padding-bottom:10px}
-.abas button{background:transparent;border:1px solid var(--line);color:var(--mut);padding:9px 16px;cursor:pointer;white-space:nowrap}
-.abas button[aria-selected=true]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+/* menu escondido (☰) */
+.topo{position:relative}
+.menuBtn{display:inline-flex;align-items:center;gap:8px}
+.ico{display:inline-flex;flex-direction:column;gap:3px;width:16px}
+.ico i{display:block;height:2px;background:currentColor}
+.abaAtual{font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--mut)}
+.menu{display:flex;flex-direction:column;border:1px solid var(--ink);background:var(--card);margin:-6px 0 24px}
+.menu button,.menu a{background:transparent;border:0;border-bottom:1px solid var(--line);color:var(--ink);padding:14px 16px;text-align:left;font-size:16px;cursor:pointer;text-decoration:none}
+.menu button:last-child{border-bottom:0;color:var(--red)}
+.menu button[aria-current=page]{background:var(--ink);color:var(--bg)}
+.menu .pendente::after,.menuBtn.pendente::after{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--red);margin-left:8px;vertical-align:middle}
+.painelAba{border-top:1px solid var(--line);padding-top:22px}
 
 /* blocos */
 .bloco{margin-top:36px;padding-top:26px;border-top:1px solid var(--line)}
@@ -74,7 +83,7 @@ label.campo{display:block;font-size:13px;color:var(--mut);margin-bottom:2px}
 .chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px;align-items:center}
 .chip{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--ink);padding:6px 6px 6px 12px}
 .chip button{background:none;border:0;cursor:pointer;font-size:18px;line-height:1;padding:0 6px;color:var(--red)}
-.chips input[type=time]{width:auto;margin:0;padding:6px 4px}
+.chips select.addHora{width:auto;margin:0;border:1px dashed var(--ink);padding:7px 10px;font-size:15px;cursor:pointer;background:var(--card)}
 .semana{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
 .semana label{border:1px solid var(--line);padding:8px 12px;cursor:pointer;user-select:none;font-size:15px}
 .semana input{position:absolute;opacity:0;pointer-events:none}
@@ -102,6 +111,10 @@ dialog::backdrop{background:rgba(20,24,39,.55)}
 .previa{white-space:pre-wrap;background:#e9f6df;border:1px solid #cfe5c0;padding:14px;font-size:15px;margin:0 0 14px}
 .vars{display:flex;gap:6px;flex-wrap:wrap;margin:-4px 0 12px}
 .rodapeSalvar{position:sticky;bottom:0;background:linear-gradient(transparent,var(--bg) 35%);padding:22px 0 12px;margin-top:24px}
+.rodapeSalvar.pendente::before{content:"Você tem alterações não salvas";display:block;color:var(--red);font-size:14px;font-weight:400;margin-bottom:6px;text-align:center}
+.rodapeSalvar.pendente .btn{box-shadow:0 0 0 3px var(--bg),0 0 0 5px var(--red)}
+.fechado{color:var(--mut)}
+.fechado .hr{text-decoration:line-through}
 .estado{display:inline-block;padding:3px 10px;font-size:13px;border:1px solid var(--line)}
 .estado.ok{color:var(--ok);border-color:#b8d4be}.estado.ruim{color:var(--red);border-color:#d9b8b8}
 footer{text-align:center;color:var(--mut);font-size:13px;padding-top:44px}

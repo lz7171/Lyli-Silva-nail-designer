@@ -69,6 +69,14 @@ let n = 0; const ok = (nome) => console.log("  ✔", nome, ++n && "");
   // 4. Painel: agenda, bloqueio, período, config
   r = await call("../api/admin", { headers: adm }); assert.strictEqual(r.body.agendamentos.length, 1); assert.strictEqual(r.body.agendamentos[0].phone, "21987654321"); ok("painel lista agendamento com telefone");
   r = await call("../api/admin", { method: "POST", headers: adm, body: { action: "reservar", date: dia, time: "09:30", name: "Ana", phone: "21 91234-5678" } }); assert.strictEqual(r.code, 200); ok("reserva manual com WhatsApp");
+  r = await call("../api/admin", { method: "POST", headers: adm, body: { action: "fecharHorario", date: dia, time: "17:00" } }); assert.strictEqual(r.code, 200);
+  r = await call("../api/agenda", { query: { date: dia } }); assert.ok(r.body.taken.includes("17:00")); ok("horário fechado aparece ocupado no site");
+  r = await call("../api/admin", { method: "POST", headers: adm, body: { action: "fecharHorario", date: dia, time: "14:30" } }); assert.strictEqual(r.code, 409); ok("não fecha horário que já tem cliente");
+  r = await call("../api/admin", { method: "POST", headers: adm, body: { action: "fecharHorario", date: dia, time: "11:11" } }); assert.strictEqual(r.code, 400); ok("não fecha horário que não existe no dia");
+  r = await call("../api/admin", { headers: adm }); const fz = r.body.agendamentos.find((a) => a.time === "17:00"); assert.ok(fz && fz.fechado === true); ok("painel identifica o horário fechado");
+  { const L0 = require("../lib/lembretes"); const lista = await L0.agendamentosDoDia(C.getRedis(), dia); assert.ok(!lista.some((a) => a.time === "17:00")); ok("horário fechado não entra nos lembretes"); }
+  r = await call("../api/admin", { method: "POST", headers: adm, body: { action: "cancelar", date: dia, time: "17:00" } }); assert.strictEqual(r.code, 200);
+  r = await call("../api/agenda", { query: { date: dia } }); assert.ok(!r.body.taken.includes("17:00")); ok("reabrir libera o horário no site");
   r = await call("../api/admin", { method: "POST", headers: adm, body: { action: "bloquearPeriodo", de: C.somarDias(hoje, 20), ate: C.somarDias(hoje, 24) } }); assert.strictEqual(r.body.total, 5); ok("bloquear período");
   r = await call("../api/admin", { method: "POST", headers: adm, body: { action: "salvarConfig", cfg: { times: ["10h", "15:00"], dias: [1, 2], janela: 30, wa: "21 99999-1111", lembrete: { quando: "mesmo_dia", msg: "Oi {nome} {data} {hora}" } } } });
   assert.deepStrictEqual(r.body.cfg.times, ["10:00", "15:00"]); assert.strictEqual(r.body.cfg.wa, "5521999991111"); ok("salvar configuração");

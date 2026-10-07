@@ -1,25 +1,45 @@
 // Aba "Horários e dias": funcionamento da agenda, períodos especiais (meses), WhatsApp e mapa.
-import { h, rotulo, SEMANA_CURTA, MESES, pad, toast, ocupado } from "./util.js";
+import { h, rotulo, SEMANA_CURTA, MESES, pad, toast, ocupado, GRADE_HORAS, lerHora } from "./util.js";
+import { vigiar, marcarSalvo } from "./pendente.js";
 import { acao, erroDe } from "./api.js";
 import { E } from "./estado.js";
 
 let raiz, recarregar = () => {};
-export function montar(el, aoSalvar) { raiz = el; recarregar = aoSalvar; desenhar(); }
+export function montar(el, aoSalvar) { raiz = el; recarregar = aoSalvar; vigiar("cfg", el, () => E.cfg); desenhar(); }
 
 // ----- componentes reutilizáveis -----
+// Horários em "etiquetas" (toque no × para tirar) + lista para adicionar.
+// Antes era um campo de hora quase invisível no celular: tocar em "+ Horário" sem
+// escolher a hora antes não fazia nada. Agora escolher na lista já adiciona.
+const SALVE = 'Toque em "Salvar alterações" para valer no site.';
 function chipsHoras(lista, aoMudar) {
   const caixa = h("div", { class: "chips" });
+  const adicionar = (t) => {
+    if (!t) return;
+    if (lista.includes(t)) return toast(rotulo(t) + " já está na lista.");
+    if (lista.length >= 12) return toast("Máximo de 12 horários.", true);
+    lista.push(t); lista.sort(); aoMudar(); ver();
+    toast(rotulo(t) + " adicionado. " + SALVE);
+  };
   const ver = () => {
-    caixa.replaceChildren(...lista.map((t, i) => h("span", { class: "chip" }, rotulo(t),
-      h("button", { type: "button", "aria-label": "Remover " + t, onclick: () => { lista.splice(i, 1); aoMudar(); ver(); } }, "×"))));
-    const novo = h("input", { type: "time", "aria-label": "Novo horário" });
-    const add = h("button", { type: "button", class: "btn out small" }, "+ Horário");
-    add.onclick = () => {
-      if (!novo.value) return;
-      if (!lista.includes(novo.value) && lista.length < 12) { lista.push(novo.value); lista.sort(); aoMudar(); }
-      ver();
+    const sel = h("select", { class: "addHora", "aria-label": "Adicionar horário" },
+      h("option", { value: "" }, "+ Adicionar horário"),
+      GRADE_HORAS.filter((t) => !lista.includes(t)).map((t) => h("option", { value: t }, rotulo(t))),
+      h("option", { value: "outro" }, "Outro horário…"));
+    sel.onchange = () => {
+      let t = sel.value; sel.value = "";
+      if (t === "outro") {
+        const dig = window.prompt("Digite o horário (ex.: 10h40)");
+        if (dig == null) return;
+        t = lerHora(dig);
+        if (!t) return toast("Horário inválido. Use, por exemplo, 10h40.", true);
+      }
+      adicionar(t);
     };
-    caixa.append(novo, add);
+    caixa.replaceChildren(...lista.map((t, i) => h("span", { class: "chip" }, rotulo(t),
+      h("button", { type: "button", "aria-label": "Remover " + rotulo(t), onclick: () => {
+        lista.splice(i, 1); aoMudar(); ver(); toast(rotulo(t) + " removido. " + SALVE);
+      } }, "×"))), sel);
   };
   ver();
   return caixa;
@@ -77,7 +97,7 @@ export function desenhar() {
     const { r, j } = await acao({ action: "salvarConfig", cfg });
     const erro = erroDe(r, j, "Não foi possível salvar.");
     if (erro) { msg.textContent = erro; return; }
-    E.cfg = j.cfg; E.times = j.times; toast("Salvo! O site já usa as novas regras."); recarregar();
+    E.cfg = j.cfg; E.times = j.times; marcarSalvo("cfg"); toast("Salvo! O site já usa as novas regras."); recarregar();
   });
 
   raiz.replaceChildren(
