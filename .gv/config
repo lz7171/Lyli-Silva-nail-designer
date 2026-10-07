@@ -1,2 +1,10 @@
 SLUG=Lyli-Silva-nail-designer
 NAME=Lyli-Silva-nail-designer
+FRAMEWORK=Node
+PKG_MANAGER=npm
+BUILD_CMD=
+OUTPUT_DIR=
+INSTALL_CMD=npm install
+AUTH=sistema próprio
+ADMIN=detectado
+ANALYZED_AT=2026-10-07T00:24:11-0300
