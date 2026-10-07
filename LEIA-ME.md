@@ -6,9 +6,9 @@ Nenhuma senha ou token fica nos arquivos. Tudo fica no **cofre do gvp**, que env
 
 | Variável | Para quê | Como preencher |
 |---|---|---|
-| `ADMIN_PASSWORD` | senha do painel `/admin` | o gvp pergunta (Enter = gera uma forte e mostra uma vez) |
+| `ADMIN_PASSWORD` | senha do painel `/admin` (use 10+ caracteres; o /api/health avisa se for menor) | o gvp pergunta (Enter = gera uma forte e mostra uma vez) |
 | `WAPITO_API_TOKEN` | enviar os lembretes por WhatsApp | o gvp pergunta: cole o token da Wapito (começa com `wpt_`) |
-| `CRON_SECRET` | proteger o envio automático das 9h | **o gvp gera sozinho** |
+| `CRON_SECRET` | proteger o envio automático das 9h (**obrigatória**: sem ela o envio automático fica bloqueado) | **o gvp gera sozinho** |
 
 O endereço da Wapito (`https://api.wapito.com/v1`) já vem no código (não é segredo).
 O banco (Upstash Redis) é ligado pela própria Vercel em **Storage** — o gvp não precisa dele.
@@ -48,6 +48,11 @@ Prefere preencher antes? Dentro da pasta do site: `gvp admin setup` e `gvp env s
 - **Fechar um horário de um dia** (ex.: só a quinta às 14h30): Agenda → *Fechar dias e horários* → *Um horário*.
   Ele aparece na lista como "Horário fechado", com o botão **Reabrir**. Também dá para fechar um dia inteiro ou vários dias.
 - **Lembretes**: cada cliente recebe **uma** mensagem só (1 dia antes, por volta das 9h, ou no próprio dia).
+  Dia **fechado** no painel não recebe lembrete (o painel avisa). Telefone **fixo** não recebe. A aba Lembretes mostra o resultado do último envio automático.
+- **Cancelar** uma cliente: o painel pergunta se quer avisá-la pelo WhatsApp.
+- **Fechar período/dia** não cancela clientes já marcadas: o painel avisa quantas existem.
+- **Salvar horários**: o painel recusa configuração incompleta (sem horário, sem dia, prazo inválido, períodos sobrepostos) e diz o motivo.
+- **Dezembro (só pelo WhatsApp a partir do dia 11)**: ligue "A página inicial segue estes dias e prazo" para esses dias saírem do calendário e use o *Aviso no topo* para explicar às clientes.
 
 ## Como funciona o envio pela Wapito
 
@@ -68,4 +73,4 @@ lib/                   Regras do sistema          tests/   Testes (npm test) —
 vercel.json            Rotas, bloqueios, segurança e agendador diário
 ```
 
-Testes: `npm install && npm test` (45 verificações). Tela: `npm i --no-save jsdom esbuild && node tests/ui.js`.
+Testes: `npm install && npm test` (72 verificações: regras do site + todas as funções do painel). Tela: `npm i --no-save jsdom esbuild && node tests/ui.js`.

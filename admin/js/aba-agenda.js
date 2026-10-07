@@ -59,12 +59,15 @@ function linhaFechada(a) {
 function linha(a) {
   if (a.fechado) return linhaFechada(a);
   const futuro = a.date >= E.hoje;
+  const diaFechado = E.bloqueios.includes(a.date);
   const info = h("span", { class: "info" }, a.name,
     a.lembrado ? h("span", { class: "selo ok" }, "lembrete enviado") : null,
+    diaFechado && futuro ? h("span", { class: "selo" }, "dia fechado") : null,
     a.phone ? h("a", { href: "https://wa.me/55" + a.phone, target: "_blank", rel: "noopener" }, foneBonito(a.phone)) : h("span", { class: "meta" }, "sem WhatsApp cadastrado"),
+    a.phone && a.phone.length < 11 ? h("span", { class: "meta" }, "telefone fixo: não recebe lembrete") : null,
     a.at ? h("span", { class: "meta" }, "agendado em " + quando(a.at)) : null);
   const acoes = h("span", { class: "acoes" });
-  if (futuro && a.phone && E.lembretes.whatsappConfigurado) {
+  if (futuro && a.phone && a.phone.length >= 11 && E.lembretes.whatsappConfigurado) {
     const b = h("button", { type: "button", class: "btn out small" }, "Lembrar agora");
     b.onclick = () => ocupado(b, "Enviando...", async () => {
       const { r, j } = await acao({ action: "lembrarUm", date: a.date, time: a.time });
@@ -78,9 +81,12 @@ function linha(a) {
     const b = h("button", { type: "button", class: "btn perigo small" }, "Cancelar");
     b.onclick = () => ocupado(b, "Cancelando...", async () => {
       if (!confirm(`Cancelar o horário de ${rotulo(a.time)} em ${dataExtensa(a.date)}?`)) return;
-      const { r, j } = await acao({ action: "cancelar", date: a.date, time: a.time });
+      const podeAvisar = a.phone && a.phone.length >= 11 && E.lembretes.whatsappConfigurado;
+      const avisar = !!podeAvisar && confirm(`Avisar ${a.name} pelo WhatsApp que o horário foi cancelado?\n\nOK = avisar | Cancelar = não avisar`);
+      const { r, j } = await acao({ action: "cancelar", date: a.date, time: a.time, avisar });
       const erro = erroDe(r, j, "Não foi possível cancelar agora.");
       if (erro) return toast(erro, true);
+      if (avisar) toast(j.avisado ? "Cancelado e cliente avisada." : "Cancelado, mas não consegui avisar a cliente" + (j.motivo ? ": " + j.motivo : "."), !j.avisado);
       recarregar();
     });
     acoes.append(b);
@@ -143,7 +149,11 @@ function bloqueioSecao() {
     rodar({ action: "bloquear", date: dia.value }, b1, "Fechando...", () => "Dia fechado. Para abrir de novo, toque em \"Reabrir dia\" abaixo.");
   };
   const b2 = h("button", { type: "button", class: "btn small" }, "Fechar período");
-  b2.onclick = () => rodar({ action: "bloquearPeriodo", de: de.value, ate: ate.value }, b2, "Fechando...", (j) => `${j.total} dia(s) fechado(s).`);
+  b2.onclick = () => {
+    const n = E.agendamentos.filter((x) => !x.fechado && x.date >= de.value && x.date <= ate.value && x.date >= E.hoje).length;
+    if (n && !confirm(`Já existem ${n} cliente(s) nesse período. Fechar não cancela esses horários, só impede novos (e os lembretes desses dias não são enviados). Continuar?`)) return;
+    rodar({ action: "bloquearPeriodo", de: de.value, ate: ate.value }, b2, "Fechando...", (j) => `${j.total} dia(s) fechado(s).`);
+  };
 
   const lista = h("div", {}, E.bloqueios.length ? E.bloqueios.map((d) => {
     const b = h("button", { type: "button", class: "btn out small" }, "Reabrir dia");

@@ -12,15 +12,26 @@ const previa = (t) => t.replace(/\{(nome|data|hora|dia_semana)\}/g, (m, k) => EX
 const exemploQuando = (q) => q === "mesmo_dia"
   ? "Exemplo: cliente com horário na quinta às 14h30 recebe a mensagem na própria quinta, por volta das 9h."
   : "Exemplo: cliente com horário na quinta às 14h30 recebe a mensagem na quarta, por volta das 9h.";
+const avisoQuando = (q) => q === "mesmo_dia" ? " Atenção: horários antes das 9h (como o das 8h de dezembro) não recebem lembrete nesse modo; prefira \"1 dia antes\"." : "";
 
+// Mostra se o envio automático das 9h rodou e deu certo (para a Lyli perceber se algo falhou)
+function cronBloco(D) {
+  if (!D.cronSecret) return h("p", { class: "msg" }, "Atenção: falta a variável CRON_SECRET na Vercel, então o envio automático das 9h está bloqueado. Rode \"gvp preflight --fix\" e publique de novo. Enquanto isso, use o botão \"Enviar agora\" abaixo.");
+  const c = D.cronUltimo;
+  if (!c) return h("p", { class: "ajuda" }, "Envio automático: ainda não rodou (ele roda todo dia por volta das 9h).");
+  if (c.ignorado) return h("p", { class: "ajuda" }, "Envio automático: desligado nas configurações. Última verificação em " + quando(c.em) + ".");
+  const r = c.resumo || {};
+  const txt = c.erro ? c.erro : r.erro ? r.erro : r.diaFechado ? "dia fechado, nada enviado" : `enviados ${r.enviados || 0}, falhas ${r.falhas || 0}, sem WhatsApp ${r.semTelefone || 0}`;
+  return h("p", { class: c.ok ? "ajuda" : "msg" }, `Último envio automático: ${quando(c.em)} (${txt}).` + (c.ok ? "" : " Confira os \"Últimos envios\" abaixo e use \"Enviar agora\" se precisar."));
+}
 export function desenhar() {
   if (!raiz || !E.cfg) return;
-  const l = E.cfg.lembrete, L = E.lembretes;
+  const l = E.cfg.lembrete, L = E.lembretes, D = E.diag || {};
   const pv = h("div", { class: "previa" }, previa(l.msg));
   const area = h("textarea", { maxlength: "1000", oninput: (e) => { l.msg = e.target.value; pv.textContent = previa(l.msg); } }, l.msg);
   const inserir = (v) => { const a = area, i = a.selectionStart ?? a.value.length; a.setRangeText(v, i, a.selectionEnd ?? i, "end"); a.dispatchEvent(new Event("input")); a.focus(); };
 
-  const exQuando = h("p", { class: "ajuda" }, exemploQuando(l.quando));
+  const exQuando = h("p", { class: "ajuda" }, exemploQuando(l.quando) + avisoQuando(l.quando));
   const msg = h("p", { class: "msg" });
   const salvar = h("button", { type: "button", class: "btn wide" }, "Salvar lembretes");
   salvar.onclick = () => ocupado(salvar, "Salvando...", async () => {
@@ -42,6 +53,7 @@ export function desenhar() {
     if (erro) { resultado.textContent = erro; return; }
     const s = j.resumo;
     if (s.erro) { resultado.textContent = s.erro; return; }
+    if (s.diaFechado) { resultado.textContent = s.detalhes.join(" "); resultado.className = "msg"; return; }
     resultado.textContent = `Enviados: ${s.enviados} · Já enviados antes: ${s.jaEnviados} · Sem WhatsApp: ${s.semTelefone} · Falhas: ${s.falhas}` + (s.detalhes.length ? " — " + s.detalhes.join("; ") : "");
     resultado.className = s.falhas ? "msg" : "msg ok"; recarregar();
   });
@@ -62,11 +74,12 @@ export function desenhar() {
   raiz.replaceChildren(
     h("section", { class: "bloco" }, h("h2", {}, "Lembrete automático para as clientes"),
       h("p", { class: "ajuda" }, "Cada cliente recebe UM lembrete só, pelo WhatsApp, antes do horário dela. Não é uma mensagem por dia: depois que a cliente recebe, ela não recebe de novo. Só recebe quem informou o WhatsApp no agendamento."),
+      cronBloco(D),
       h("p", {}, "WhatsApp (Wapito): ", h("span", { class: "estado " + (L.whatsappConfigurado ? "ok" : "ruim") }, L.whatsappConfigurado ? "conectado" : "não configurado")),
       L.whatsappConfigurado ? null : h("p", { class: "ajuda" }, "Falta cadastrar o token da Wapito na Vercel (WAPITO_API_TOKEN). Veja o passo a passo no arquivo LEIA-ME."),
       h("label", { class: "marcar" }, h("input", { type: "checkbox", checked: l.ativo, onchange: (e) => (l.ativo = e.target.checked) }), "Enviar lembretes automaticamente (1 por cliente)"),
       h("label", { class: "campo" }, "Quando enviar"),
-      h("select", { onchange: (e) => { l.quando = e.target.value; exQuando.textContent = exemploQuando(l.quando); } },
+      h("select", { onchange: (e) => { l.quando = e.target.value; exQuando.textContent = exemploQuando(l.quando) + avisoQuando(l.quando); } },
         h("option", { value: "dia_anterior", selected: l.quando === "dia_anterior" }, "1 dia antes do horário (por volta das 9h)"),
         h("option", { value: "mesmo_dia", selected: l.quando === "mesmo_dia" }, "No próprio dia do horário (por volta das 9h)")),
       exQuando,

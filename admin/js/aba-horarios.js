@@ -94,13 +94,20 @@ export function desenhar() {
   salvar.onclick = () => ocupado(salvar, "Salvando...", async () => {
     msg.className = "msg";
     if (!cfg.times.length) { msg.textContent = "Deixe ao menos um horário padrão."; return; }
+    if (!cfg.dias.length) { msg.textContent = "Marque ao menos um dia de atendimento."; return; }
+    if (!Number.isInteger(cfg.janela) || cfg.janela < 1 || cfg.janela > 365) { msg.textContent = "O prazo para agendar deve ser de 1 a 365 dias."; return; }
     const { r, j } = await acao({ action: "salvarConfig", cfg });
     const erro = erroDe(r, j, "Não foi possível salvar.");
     if (erro) { msg.textContent = erro; return; }
     E.cfg = j.cfg; E.times = j.times; marcarSalvo("cfg"); toast("Salvo! O site já usa as novas regras."); recarregar();
   });
 
+  const temRestrita = cfg.regras.some((r) => r.restritoDesde);
+  const aviso = !cfg.syncCalendario && temRestrita
+    ? h("p", { class: "msg" }, "Atenção: com \"A página inicial segue estes dias e prazo\" desligado, a página ainda mostra como escolhíveis os dias que são só pelo WhatsApp (todos os horários aparecem riscados). Ligue essa opção para esses dias saírem do calendário, e use o \"Aviso no topo\" para explicar às clientes.")
+    : null;
   raiz.replaceChildren(
+    aviso,
     h("section", { class: "bloco" }, h("h2", {}, "Agendamento online"),
       h("label", { class: "marcar" }, online, "Agendamento online ligado"),
       pausaWrap,
@@ -109,7 +116,7 @@ export function desenhar() {
     h("section", { class: "bloco" }, h("h2", {}, "Horários padrão"),
       h("p", { class: "ajuda" }, "Horários oferecidos nos dias normais de atendimento."), chipsHoras(cfg.times, () => {}),
       h("h3", {}, "Dias de atendimento"), semana(cfg.dias, () => {}),
-      campo("Até quantos dias à frente a cliente pode agendar", h("input", { type: "number", min: "1", max: "365", value: cfg.janela, oninput: (e) => (cfg.janela = parseInt(e.target.value, 10) || 60) })),
+      campo("Até quantos dias à frente a cliente pode agendar", h("input", { type: "number", min: "1", max: "365", value: cfg.janela, oninput: (e) => (cfg.janela = e.target.value === "" ? "" : parseInt(e.target.value, 10)) })),
       h("label", { class: "marcar" }, sync, h("span", {}, "A página inicial segue estes dias e prazo")),
       h("p", { class: "ajuda" }, "Desligado, a página inicial continua mostrando terça a sábado por 60 dias, como sempre foi. Ligue só se quiser que mudanças de dias (ex.: abrir aos domingos) apareçam para as clientes.")),
 

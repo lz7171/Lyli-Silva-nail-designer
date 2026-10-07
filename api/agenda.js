@@ -14,7 +14,8 @@ module.exports = async (req, res) => {
         await redis.get("lyli:teste");
         return res.status(200).json({ banco: "conectado", horarios: C.todasHoras(await C.carregarCfg(redis)) });
       } catch (e) {
-        return res.status(200).json({ banco: "erro_ao_conectar", motivo: String((e && e.message) || e).slice(0, 200) });
+        console.error("agenda status:", e);
+        return res.status(200).json({ banco: "erro_ao_conectar", motivo: "O banco não respondeu. Veja os logs da Vercel ou abra /api/health." });
       }
     }
 
@@ -35,6 +36,8 @@ module.exports = async (req, res) => {
     if (req.method === "GET") {
       const date = q.date;
       if (!C.dataReal(date)) return res.status(400).json({ error: "Data inválida" });
+      // Anti-abuso: robô consultando sem parar gastaria a cota do banco (generoso: uma cliente real nunca chega perto)
+      if ((await C.contar(redis, `rl:consulta:${C.ipDe(req)}`, 3600)) > 300) return res.status(429).json({ error: "Muitas consultas seguidas. Aguarde alguns minutos ou fale direto pelo WhatsApp." });
       const now = C.agoraSP(), tk = C.gerarTk();
       // Dia indisponível: devolve os horários todos como ocupados. (Se a lista fosse vazia,
       // a página inicial reaproveitaria os horários do último dia e mostraria como livres.)

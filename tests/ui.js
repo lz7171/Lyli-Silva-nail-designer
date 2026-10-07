@@ -75,6 +75,35 @@ const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
   assert.ok($("#aba-horarios").textContent.includes("Dezembro")); console.log("  ✔ aba Horários mostra o período de Dezembro");
   click([...$("#aba-horarios").querySelectorAll("button")].find((b) => b.textContent === "+ Novo período"));
   click([...$("#aba-horarios").querySelectorAll("button")].find((b) => b.textContent === "Salvar alterações")); await sleep(150);
+  // ----- novidades da revisão -----
+  { // cancelar: pergunta se avisa a cliente, e manda o aviso
+    const linhaCli = [...$("#aba-agenda").querySelectorAll(".linha")].find((x) => x.textContent.includes("Cliente Teste"));
+    assert.ok(linhaCli, "cliente da reserva manual na lista");
+    const perguntas = []; w.confirm = (t) => { perguntas.push(t); return true; };
+    click([...linhaCli.querySelectorAll("button")].find((b) => b.textContent === "Cancelar")); await sleep(200);
+    assert.strictEqual(perguntas.length, 2); assert.ok(perguntas[1].includes("Avisar Cliente Teste"));
+    assert.ok(!$("#aba-agenda").textContent.includes("Cliente Teste")); console.log("  ✔ cancelar pergunta se avisa a cliente pelo WhatsApp e some da agenda");
+  }
+  { // fechar período avisa quando há clientes
+    const rs = await (async () => { const sec2 = [...$("#aba-agenda").querySelectorAll("section")].find((x) => x.querySelector("h2").textContent === "Fechar dias e horários"); return sec2; })();
+    const datas = rs.querySelectorAll("input[type=date]"); dig(datas[2], d); dig(datas[3], d);
+    w.confirm = () => true;
+    click([...rs.querySelectorAll("button")].find((b) => b.textContent === "Fechar período")); await sleep(200);
+    assert.ok($("#aba-agenda").textContent.includes("Reabrir dia")); console.log("  ✔ fechar período funciona e aparece em \"Dias fechados\"");
+  }
+  { // horários: aviso do calendário + validação clara ao salvar
+    click($("#menuBtn")); click($('[data-aba="horarios"]'));
+    assert.ok($("#aba-horarios").textContent.includes("ainda mostra como escolhíveis os dias que são só pelo WhatsApp")); console.log("  ✔ aba Horários avisa do calendário (dezembro) quando a opção está desligada");
+    const jan = $("#aba-horarios").querySelector("input[type=number]"); dig(jan, "");
+    click([...$("#aba-horarios").querySelectorAll("button")].find((b) => b.textContent === "Salvar alterações")); await sleep(100);
+    assert.ok($("#aba-horarios").textContent.includes("1 a 365")); console.log("  ✔ prazo vazio/inválido mostra mensagem clara (não vira 60 em silêncio)");
+    dig(jan, "60");
+  }
+  { // lembretes: mostra o estado do envio automático
+    click($("#menuBtn")); click($('[data-aba="lembretes"]'));
+    assert.ok(/falta a variável CRON_SECRET|ainda não rodou|Último envio automático/.test($("#aba-lembretes").textContent)); console.log("  ✔ aba Lembretes mostra se o envio automático das 9h rodou");
+    assert.ok($("#aba-lembretes").textContent.includes("antes das 9h")===false); // aviso só aparece no modo "no próprio dia"
+  }
   assert.ok(!erros.length, erros.join(";")); console.log("  ✔ salvar configuração sem erros");
 
   // aba site: ligar "Sobre", escrever, salvar
