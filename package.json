@@ -1,0 +1,13 @@
+{
+  "name": "lyli-silva-nail-designer",
+  "version": "2.0.0",
+  "private": true,
+  "description": "Site de agendamento + painel administrativo da Lyli Silva Nail Designer",
+  "license": "UNLICENSED",
+  "scripts": {
+    "test": "node tests/run.js"
+  },
+  "dependencies": {
+    "@upstash/redis": "^1.34.0"
+  }
+}

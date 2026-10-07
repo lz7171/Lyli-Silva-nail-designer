@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<link rel="icon" href="data:,">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Painel | Lyli Silva Nail Designer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Allura&family=Jost:wght@200;300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/admin/css/admin.css">
+</head>
+<body>
+<main>
+  <h1>Painel</h1>
+  <p class="sub">Lyli Silva Nail Designer</p>
+
+  <section id="login">
+    <p id="erroLogin" role="alert"></p>
+    <input id="senha" type="password" placeholder="Senha" autocomplete="current-password">
+    <button class="btn wide" id="entrar" type="button">Entrar</button>
+  </section>
+
+  <div id="painel" hidden>
+    <div class="topo">
+      <a class="btn out small" href="/" target="_blank" rel="noopener">Ver o site</a>
+      <span class="grow"></span>
+      <button class="btn out small" id="atualizar" type="button">Atualizar</button>
+      <button class="btn out small" id="sair" type="button">Sair</button>
+    </div>
+    <nav class="abas" id="abas" role="tablist" aria-label="Seções do painel">
+      <button type="button" role="tab" data-aba="agenda" aria-selected="true">Agenda</button>
+      <button type="button" role="tab" data-aba="horarios" aria-selected="false">Horários e dias</button>
+      <button type="button" role="tab" data-aba="site" aria-selected="false">Site</button>
+      <button type="button" role="tab" data-aba="lembretes" aria-selected="false">Lembretes</button>
+    </nav>
+    <div id="aba-agenda" class="painelAba" role="tabpanel"></div>
+    <div id="aba-horarios" class="painelAba" role="tabpanel" hidden></div>
+    <div id="aba-site" class="painelAba" role="tabpanel" hidden></div>
+    <div id="aba-lembretes" class="painelAba" role="tabpanel" hidden></div>
+  </div>
+  <footer>Lyli Silva Nail Designer</footer>
+</main>
+<dialog id="dlgFotos"></dialog>
+<div id="toast" role="status" aria-live="polite" hidden></div>
+<script type="module" src="/admin/js/main.js"></script>
+</body>
+</html>
