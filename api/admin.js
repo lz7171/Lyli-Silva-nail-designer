@@ -15,7 +15,7 @@ module.exports = async (req, res) => {
   res.setHeader("Cache-Control", "no-store");
   try {
     if (!senhaConfigurada()) {
-      return res.status(503).json({ code: "sem_senha", error: "Senha do painel não configurada. Defina ADMIN_PASSWORD (mín. 6 caracteres) na Vercel e faça Redeploy." });
+      return res.status(503).json({ code: "sem_senha", error: "Senha do painel não configurada (variável ADMIN_PASSWORD). No gvp: gvp admin setup e depois gvp deploy." });
     }
     const redis = C.getRedis();
     if (!redis) return res.status(503).json({ error: "Banco de dados não conectado." });

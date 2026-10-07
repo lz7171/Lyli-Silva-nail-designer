@@ -1,43 +1,142 @@
 {
   "cleanUrls": true,
   "functions": {
-    "api/site.js": { "includeFiles": "site/**" }
+    "api/site.js": {
+      "includeFiles": "site/**"
+    },
+    "api/admin.js": {
+      "maxDuration": 60
+    },
+    "api/lembretes.js": {
+      "maxDuration": 60
+    }
   },
   "rewrites": [
-    { "source": "/", "destination": "/api/site" },
-    { "source": "/index", "destination": "/api/site" },
-    { "source": "/admin", "destination": "/admin/index.html" }
+    {
+      "source": "/",
+      "destination": "/api/site"
+    },
+    {
+      "source": "/index",
+      "destination": "/api/site"
+    },
+    {
+      "source": "/admin",
+      "destination": "/admin/index.html"
+    },
+    {
+      "source": "/health",
+      "destination": "/api/health"
+    }
   ],
   "redirects": [
-    { "source": "/site/:path*", "destination": "/", "permanent": false },
-    { "source": "/index.html", "destination": "/", "permanent": false }
+    {
+      "source": "/site/:path*",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/index.html",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/lib",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/lib/:path*",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/tests",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/tests/:path*",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/node_modules/:path*",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/.gv/:path*",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/api/_:path*",
+      "destination": "/",
+      "permanent": false
+    },
+    {
+      "source": "/(package\\.json|package-lock\\.json|vercel\\.json|LEIA-ME\\.md|LEIA-ME|\\.env\\.example|\\.env|\\.gitignore)",
+      "destination": "/",
+      "permanent": false
+    }
   ],
   "crons": [
-    { "path": "/api/lembretes", "schedule": "0 12 * * *" }
+    {
+      "path": "/api/lembretes",
+      "schedule": "0 12 * * *"
+    }
   ],
   "headers": [
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "X-Content-Type-Options", "value": "nosniff" },
-        { "key": "Referrer-Policy", "value": "strict-origin-when-cross-origin" },
-        { "key": "X-Frame-Options", "value": "DENY" }
+        {
+          "key": "X-Content-Type-Options",
+          "value": "nosniff"
+        },
+        {
+          "key": "Referrer-Policy",
+          "value": "strict-origin-when-cross-origin"
+        },
+        {
+          "key": "X-Frame-Options",
+          "value": "DENY"
+        }
       ]
     },
     {
       "source": "/admin/(.*)",
       "headers": [
-        { "key": "X-Robots-Tag", "value": "noindex, nofollow" },
-        { "key": "Cache-Control", "value": "no-store" },
-        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'" }
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
+        }
       ]
     },
     {
       "source": "/admin",
       "headers": [
-        { "key": "X-Robots-Tag", "value": "noindex, nofollow" },
-        { "key": "Cache-Control", "value": "no-store" },
-        { "key": "Content-Security-Policy", "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'" }
+        {
+          "key": "X-Robots-Tag",
+          "value": "noindex, nofollow"
+        },
+        {
+          "key": "Cache-Control",
+          "value": "no-store"
+        },
+        {
+          "key": "Content-Security-Policy",
+          "value": "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src https://fonts.gstatic.com; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'none'"
+        }
       ]
     }
   ]

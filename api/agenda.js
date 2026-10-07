@@ -33,11 +33,16 @@ module.exports = async (req, res) => {
     }
 
     if (req.method === "GET") {
-      const date = q.date, inf = C.diaPublico(cfg, date);
-      if (!inf) return res.status(400).json({ error: "Data inválida" });
+      const date = q.date;
+      if (!C.dataReal(date)) return res.status(400).json({ error: "Data inválida" });
       const now = C.agoraSP(), tk = C.gerarTk();
-      if (!cfg.online) return res.status(200).json({ times: [], taken: [], pausado: true, now, tk });
-      if (inf.restrito) return res.status(200).json({ times: [], taken: [], restrito: true, now, tk });
+      // Dia indisponível: devolve os horários todos como ocupados. (Se a lista fosse vazia,
+      // a página inicial reaproveitaria os horários do último dia e mostraria como livres.)
+      const indisponivel = (extra) => { const t = C.infoDia(cfg, date).times; return res.status(200).json({ times: t, taken: t, bloqueado: true, ...extra, now, tk }); };
+      const inf = C.diaPublico(cfg, date);
+      if (!inf) return indisponivel({ foraDaAgenda: true });
+      if (!cfg.online) return indisponivel({ pausado: true });
+      if (inf.restrito) return indisponivel({ restrito: true });
       if (await redis.get(C.chaveBloqueio(date))) return res.status(200).json({ times: inf.times, taken: inf.times, bloqueado: true, now, tk });
       const vals = await redis.mget(...inf.times.map((t) => C.chaveAgenda(date, t)));
       const taken = inf.times.filter((t, i) => vals[i] !== null && vals[i] !== undefined);

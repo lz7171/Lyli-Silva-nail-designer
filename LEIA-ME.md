@@ -1,52 +1,61 @@
-# Lyli Silva Nail Designer — site + painel + lembretes
+# Lyli Silva Nail Designer — site + painel + lembretes (compatível com o GVP 7)
 
-## Como colocar no ar (5 passos)
+Nenhuma senha ou token fica nos arquivos. Tudo fica no **cofre do gvp**, que envia para a Vercel.
 
-1. **Suba esta pasta inteira** do mesmo jeito que você já subia (GitHub → Vercel). Não precisa instalar nada.
-2. Na Vercel, abra o projeto → **Settings → Environment Variables** e cadastre (marque Production, Preview e Development):
+## Variáveis que o site usa (o gvp detecta sozinho)
 
-   | Nome | Valor |
-   |---|---|
-   | `ADMIN_PASSWORD` | a senha que você quer para o painel (mínimo 6 caracteres) |
-   | `WAPITO_API_TOKEN` | o token da Wapito (**gere um novo**, veja o aviso abaixo) |
-   | `CRON_SECRET` | qualquer texto longo e aleatório (ex.: 40 letras e números) |
+| Variável | Para quê | Como preencher |
+|---|---|---|
+| `ADMIN_PASSWORD` | senha do painel `/admin` | o gvp pergunta (Enter = gera uma forte e mostra uma vez) |
+| `WAPITO_API_TOKEN` | enviar os lembretes por WhatsApp | o gvp pergunta: cole o token da Wapito (começa com `wpt_`) |
+| `CRON_SECRET` | proteger o envio automático das 9h | **o gvp gera sozinho** |
 
-   O banco (Upstash Redis) continua o mesmo de antes — se já estava funcionando, não mexa.
-3. Vá em **Deployments → ⋯ → Redeploy** para as variáveis valerem.
-4. Abra `seu-site.com/admin`, entre com a senha e vá na aba **Lembretes → Testar o WhatsApp**: digite o seu número e confira se a mensagem chega.
-5. Pronto. Todo dia às **9h** o sistema envia os lembretes sozinho.
+O endereço da Wapito (`https://api.wapito.com/v1`) já vem no código (não é segredo).
+O banco (Upstash Redis) é ligado pela própria Vercel em **Storage** — o gvp não precisa dele.
 
-> ⚠️ **Segurança:** o token da Wapito foi colado numa conversa, então considere-o exposto. Entre na Wapito, **gere um token novo** e use o novo no passo 2. Nunca coloque senhas ou tokens dentro dos arquivos do site.
+## Atualizar o site pelo gvp
 
-## O que mudou
+1. `gvp` → **Meus sites** → `Lyli-Silva-nail-designer` → **📦 Atualizar com novo ZIP** → escolha este ZIP → `s`.
+2. **Fazer deploy agora?** → `s`.
+3. O preflight vai avisar *Variáveis ausentes*. Em **Aplicar as correções automáticas?** responda `s`:
+   - **Senha do administrador**: digite uma (mínimo 10 caracteres) ou aperte **Enter** para gerar. **Anote.**
+   - **Valor de WAPITO_API_TOKEN**: cole o token da Wapito.
+   - `CRON_SECRET` é gerado sozinho.
+4. O gvp publica e testa o site de verdade (`/` e `/api/health`).
 
-- **Página inicial (`site/index.html`): arquivo idêntico ao original, nenhum byte alterado.** O fluxo de agendamento é o mesmo. O arquivo só mudou de pasta; o painel aplica as edições por cima na hora de entregar a página. Se não houver nenhuma edição salva (ou se o banco cair), sai exatamente o original.
-- **Painel (`/admin`) completo**, em 4 abas:
-  - **Agenda** — ver/buscar/cancelar, agendar manualmente (com WhatsApp), bloquear dia ou período, botão *Lembrar agora*.
-  - **Horários e dias** — liga/desliga o agendamento, horários, dias da semana, prazo, **períodos especiais por mês/data** (ex.: dezembro), WhatsApp, link do mapa, frase de apresentação.
-  - **Site** — todos os textos, logo, cores, seção *Sobre mim*, *Serviços e preços*, *Galeria de fotos*, linhas extras em *Informações* (Instagram, endereço…), biblioteca de fotos (reduzidas automaticamente).
-  - **Lembretes** — mensagem editável com `{data}`, `{hora}`, `{nome}`, `{dia_semana}`, prévia, envio manual, teste e histórico.
-- **Lembretes por WhatsApp (Wapito):** automático diário; ninguém recebe duas vezes; falha na Wapito não marca como enviado (tenta de novo no dia seguinte ou pelo botão). Clientes agendadas pelo site já informam o WhatsApp; para agendamentos manuais, preencha o número.
-- **Segurança:** removida a senha padrão que existia no código (agora o painel só abre com `ADMIN_PASSWORD`); texto digitado nunca vira código na tela; fotos validadas; painel com proteção extra de navegador (CSP).
-- **Código organizado** em arquivos separados (veja abaixo) e `package.json` incluído (o original não tinha).
+Prefere preencher antes? Dentro da pasta do site: `gvp admin setup` e `gvp env set WAPITO_API_TOKEN`, depois `gvp deploy`.
 
-## Duas observações honestas
+## Depois de publicar
 
-1. **Wapito:** não consegui acessar a documentação da Wapito, então o formato do envio (`POST {api}/messages` com `to` e `message`, token `Bearer`) é o padrão mais comum, **não confirmado**. Use o **Testar o WhatsApp** (aba Lembretes): se a Wapito recusar, a tela mostra a resposta dela. Para ajustar **sem mexer em código**, cadastre na Vercel as variáveis opcionais `WAPITO_SEND_PATH`, `WAPITO_FIELD_PHONE`, `WAPITO_FIELD_TEXT` (veja `.env.example`) conforme a documentação da Wapito.
-2. **Calendário da página inicial:** como a página inicial não pode ser alterada, ela continua mostrando terça a sábado por 60 dias. Se um dia você mudar os dias de atendimento no painel (ex.: abrir domingo), ligue a opção **"A página inicial segue estes dias e prazo"** na aba Horários e dias.
+- `gvp admin test` → confirma que a senha certa entra e a errada é recusada.
+- No painel (`seu-site/admin`) → aba **Lembretes** → **Testar o WhatsApp** com o seu número.
+
+## Se aparecer erro
+
+| O gvp mostra | O que fazer |
+|---|---|
+| `HTTP 503 em /api/health` | O banco não está ligado neste projeto da Vercel. Vercel → projeto → **Storage** → conecte o **Upstash Redis** → rode `gvp deploy` de novo. Abra `seu-site/api/health` para ver o motivo exato. |
+| `Variáveis ausentes` | `gvp preflight --fix` (ele pergunta só o que falta). |
+| Lembrete: "A Wapito recusou o token" | Gere um token novo na Wapito e rode `gvp env set WAPITO_API_TOKEN` e `gvp deploy`. |
+| Lembrete: "não reconheceu o endereço" | Mande ao suporte da Wapito o texto que apareceu e pergunte o endereço e os campos de envio de texto. Depois: `gvp env set WAPITO_SEND_PATH`, `WAPITO_FIELD_PHONE`, `WAPITO_FIELD_TEXT`. |
+
+## Como funciona o envio pela Wapito
+
+A Wapito não tem documentação pública. Na **primeira** mensagem o sistema testa sozinho os formatos mais
+usados e guarda o que funcionou; depois usa sempre esse. Nenhuma tentativa errada envia mensagem.
 
 ## Estrutura
 
 ```
 site/index.html        Página inicial (intacta)
-admin/                 Painel: index.html, css/admin.css, js/ (um arquivo por aba)
-api/agenda.js          Agendamento público (inalterado)
-api/admin.js           Painel (roteador)      api/lembretes.js  Envio diário
-api/site.js            Entrega a home + edições   api/media.js  Fotos
-lib/                   Regras do sistema (datas, config, site, whatsapp, lembretes...)
-lib/handlers/          Uma ação do painel por função
-tests/                 Testes automáticos (npm test)
-vercel.json            Rotas, segurança e agendador diário
+admin/                 Painel (telas intactas)
+api/agenda.js          Agendamento público          api/admin.js        Painel
+api/lembretes.js       Envio diário (9h)            api/site.js         Entrega a home + edições
+api/media.js           Fotos                        api/health.js       Saúde do site (teste do gvp)
+api/admin-login.js     Confere a senha (gvp admin test)
+lib/ambiente.js        ★ Único lugar que lê as variáveis (process.env)
+lib/                   Regras do sistema          tests/   Testes (npm test) — não vão para a Vercel
+vercel.json            Rotas, bloqueios, segurança e agendador diário
 ```
 
-Testes: `npm install && npm test` (26 verificações do servidor). O teste de tela usa `npm i --no-save jsdom esbuild && node tests/ui.js`.
+Testes: `npm install && npm test` (45 verificações). Tela: `npm i --no-save jsdom esbuild && node tests/ui.js`.

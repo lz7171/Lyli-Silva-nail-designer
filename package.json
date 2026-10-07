@@ -8,7 +8,6 @@
     "test": "node tests/run.js"
   },
   "dependencies": {
-    "@upstash/redis": "^1.34.0",
-    "mysql2": "^3.24.5"
+    "@upstash/redis": "^1.34.0"
   }
 }

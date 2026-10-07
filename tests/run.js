@@ -7,8 +7,9 @@ const path = require("path");
 // ---- banco falso ----
 const { FakeRedis, store, listas } = require("./fake-redis");
 require.cache[require.resolve("@upstash/redis")] = { exports: { Redis: FakeRedis } };
-process.env.UPSTASH_REDIS_REST_URL = "https://fake"; process.env.UPSTASH_REDIS_REST_TOKEN = "fake";
-process.env.ADMIN_PASSWORD = "senha-teste-123"; process.env.WAPITO_API_TOKEN = "token-falso";
+const { setar, ler } = require("./ambiente-teste");
+setar("UPSTASH_REDIS_REST_URL", "https://fake"); setar("UPSTASH_REDIS_REST_TOKEN", "fake");
+setar("ADMIN_PASSWORD", "senha-teste-123"); setar("WAPITO_API_TOKEN", "token-falso");
 
 const enviadas = [];
 global.fetch = async (url, o) => { enviadas.push({ url, o }); return { ok: true, status: 200, text: async () => '{"ok":true}' }; };
@@ -31,18 +32,37 @@ let n = 0; const ok = (nome) => console.log("  ✔", nome, ++n && "");
   // 2. Admin: segurança
   r = await call("../api/admin"); assert.strictEqual(r.code, 401); ok("painel exige senha");
   r = await call("../api/admin", { headers: adm }); assert.strictEqual(r.code, 200); assert.ok(r.body.cfg && r.body.site); ok("painel abre com a senha");
-  const sv = process.env.ADMIN_PASSWORD; delete process.env.ADMIN_PASSWORD;
-  r = await call("../api/admin", { headers: adm }); assert.strictEqual(r.code, 503); assert.strictEqual(r.body.code, "sem_senha"); process.env.ADMIN_PASSWORD = sv; ok("sem ADMIN_PASSWORD o painel trava (sem senha padrão)");
+  const sv = ler("ADMIN_PASSWORD"); setar("ADMIN_PASSWORD");
+  r = await call("../api/admin", { headers: adm }); assert.strictEqual(r.code, 503); assert.strictEqual(r.body.code, "sem_senha"); ok("sem ADMIN_PASSWORD o painel trava (não existe senha padrão)");
+  setar("ADMIN_PASSWORD", "123"); r = await call("../api/admin", { headers: { "x-admin-pass": "123" } }); assert.strictEqual(r.code, 503); ok("senha curta demais não vale");
+  setar("ADMIN_PASSWORD", '  "' + sv + '"  '); r = await call("../api/admin", { headers: adm }); assert.strictEqual(r.code, 200); ok("aspas/espaços colados na variável não atrapalham");
+  setar("ADMIN_PASSWORD", sv);
+  // rota de login usada pelo "gvp admin test"
+  r = await call("../api/admin-login", { method: "POST", body: { email: "admin", password: sv } }); assert.strictEqual(r.code, 200); assert.strictEqual(r.body.ok, true);
+  r = await call("../api/admin-login", { method: "POST", body: { email: "admin", password: "senha-errada-gvp-teste" } }); assert.strictEqual(r.code, 401);
+  r = await call("../api/admin-login", { method: "POST", body: JSON.stringify({ password: sv }) }); assert.strictEqual(r.code, 200);
+  r = await call("../api/admin-login"); assert.strictEqual(r.code, 405); ok("/api/admin-login aceita a senha certa e recusa a errada (gvp admin test)");
 
   // 3. Agendamento público continua igual
   const hoje = C.agoraSP().date; let dia = C.somarDias(hoje, 2); while (![2, 3, 4, 5, 6].includes(C.meioDia(dia).getUTCDay()) || dia.slice(5, 7) === "12") dia = C.somarDias(dia, 1);
   r = await call("../api/agenda", { query: { date: dia } }); assert.deepStrictEqual(r.body.times, ["09:30", "14:30", "17:00"]); const tk = r.body.tk;
   ok("horários públicos");
+  { // dias indisponíveis: horários vêm todos ocupados (nunca lista vazia, que a página mostraria como livre)
+    let dz = C.somarDias(hoje, 0); while (!(dz.slice(5) >= "12-11" && dz.slice(5) <= "12-31")) dz = C.somarDias(dz, 1);
+    if (C.diasEntre(hoje, dz) <= 60) {
+      r = await call("../api/agenda", { query: { date: dz } }); assert.ok(r.body.restrito && r.body.times.length === 4 && r.body.taken.length === 4 && r.body.bloqueado);
+    }
+    let seg = C.somarDias(hoje, 1); while (C.meioDia(seg).getUTCDay() !== 1 || seg.slice(5, 7) === "12") seg = C.somarDias(seg, 1);
+    r = await call("../api/agenda", { query: { date: seg } }); assert.strictEqual(r.code, 200); assert.ok(r.body.times.length && r.body.taken.length === r.body.times.length);
+    r = await call("../api/agenda", { query: { date: "2026-02-30" } }); assert.strictEqual(r.code, 400);
+    ok("dia restrito/sem atendimento mostra horários ocupados (não livres)");
+  }
   r = await call("../api/agenda", { method: "POST", body: { date: dia, time: "14:30", name: "Maria Silva", phone: "21987654321", tk } });
   assert.strictEqual(r.code, 400); ok("token novo demais é recusado (anti-robô)");
-  const antigo = String(Date.now() - 5000) + "." + require("crypto").createHmac("sha256", "lyli|fake|" + process.env.ADMIN_PASSWORD).update(String(Date.now() - 5000)).digest("hex").slice(0, 24);
+  const ts5 = String(Date.now() - 5000); // calculado uma vez só (antes eram duas e podia dar diferença de 1 ms)
+  const antigo = ts5 + "." + require("crypto").createHmac("sha256", "lyli|fake|" + ler("ADMIN_PASSWORD")).update(ts5).digest("hex").slice(0, 24);
   r = await call("../api/agenda", { method: "POST", body: { date: dia, time: "14:30", name: "Maria Silva", phone: "21987654321", tk: antigo } });
-  assert.strictEqual(r.code, 200); ok("cliente agenda pelo site");
+  assert.strictEqual(r.code, 200, JSON.stringify(r.body)); ok("cliente agenda pelo site");
   r = await call("../api/agenda", { method: "POST", body: { date: dia, time: "14:30", name: "Outra Pessoa", phone: "21977776666", tk: antigo } });
   assert.strictEqual(r.code, 409); ok("horário ocupado não duplica");
 
@@ -54,6 +74,9 @@ let n = 0; const ok = (nome) => console.log("  ✔", nome, ++n && "");
   assert.deepStrictEqual(r.body.cfg.times, ["10:00", "15:00"]); assert.strictEqual(r.body.cfg.wa, "5521999991111"); ok("salvar configuração");
   r = await call("../api/admin", { method: "POST", headers: adm, body: { action: "naoExiste" } }); assert.strictEqual(r.code, 400);
   r = await call("../api/admin", { method: "POST", headers: adm, body: { action: "constructor" } }); assert.strictEqual(r.code, 400); ok("ações desconhecidas são recusadas");
+  await call("../api/admin", { method: "POST", headers: adm, body: { action: "salvarConfig", cfg: { online: false } } });
+  r = await call("../api/agenda", { query: { date: dia } }); assert.ok(r.body.pausado && r.body.times.length && r.body.taken.length === r.body.times.length);
+  r = await call("../api/site"); assert.ok(r.body.includes('class="x-aviso"')); ok("agendamento pausado: horários ocupados + aviso no site");
   await call("../api/admin", { method: "POST", headers: adm, body: { action: "salvarConfig", cfg: {} } }); // volta ao padrão
 
   // 5. Fotos + site
@@ -95,8 +118,65 @@ let n = 0; const ok = (nome) => console.log("  ✔", nome, ++n && "");
   assert.ok(!(await red.get(C.K.lembrete(amanha, "09:30")))); ok("falha na Wapito não marca como enviado (tenta de novo depois)");
   global.fetch = async (u, o) => { enviadas.push({ url: u, o }); return { ok: true, status: 200, text: async () => "{}" }; };
   r = await call("../api/lembretes"); assert.strictEqual(r.code, 401); ok("cron sem autorização é recusado");
-  process.env.CRON_SECRET = "segredo"; r = await call("../api/lembretes", { headers: { authorization: "Bearer segredo" } }); assert.strictEqual(r.code, 200); ok("cron autorizado roda");
+  setar("CRON_SECRET", "segredo"); r = await call("../api/lembretes", { headers: { authorization: "Bearer segredo" } }); assert.strictEqual(r.code, 200); ok("cron autorizado roda");
   r = await call("../api/admin", { method: "POST", headers: adm, body: { action: "testarWhatsApp", telefone: "21988887777" } }); assert.ok(r.body.ok); ok("botão de teste do WhatsApp");
+
+  // 8. Wapito: descoberta automática do formato
+  const WA = require("../lib/whatsapp");
+  const chamadas = [];
+  const fakeApi = (regra) => async (url, o) => { const b = JSON.parse(o.body); chamadas.push({ url, b, h: o.headers }); return regra(url, b); };
+  const resp = (status, txt) => ({ ok: status < 300, status, text: async () => txt || "" });
+  await red.del(WA.CHAVE_FORMATO); await new FakeRedis().del(WA.CHAVE_FORMATO); WA._esquecer();
+  global.fetch = fakeApi((url, b) => url.endsWith("/v1/messages") ? resp(404, "not found")
+    : url.endsWith("/v1/messages/send") ? (b.number && b.text ? resp(200, '{"id":"abc"}') : resp(422, '{"error":"campo invalido"}')) : resp(404));
+  setar("WAPITO_API_URL", "https://api.wapito.com/v1/");
+  let w = await WA.enviar("21988887777", "Oi");
+  assert.ok(w.ok, w.detalhe); assert.strictEqual(chamadas.filter((c) => c.b.number && c.b.text).length, 1, "só UMA mensagem de verdade");
+  assert.strictEqual(chamadas[0].h.Authorization, "Bearer token-falso"); ok("descobre sozinho o endereço e os campos da Wapito");
+  chamadas.length = 0; WA._esquecer(); w = await WA.enviar("21988887777", "Oi de novo");
+  assert.ok(w.ok); assert.strictEqual(chamadas.length, 1); assert.ok(chamadas[0].url.endsWith("/v1/messages/send")); ok("depois usa o formato guardado (1 chamada só)");
+  chamadas.length = 0; global.fetch = fakeApi(() => resp(401, '{"error":"token token-falso invalido"}'));
+  w = await WA.enviar("21988887777", "x"); assert.ok(!w.ok && /token/.test(w.detalhe) && !w.detalhe.includes("token-falso")); assert.strictEqual(chamadas.length, 1);
+  ok("token recusado: para na hora e nunca mostra o token");
+  chamadas.length = 0; global.fetch = fakeApi(() => resp(200, '{"success":false,"error":"invalid"}'));
+  await red.del(WA.CHAVE_FORMATO); WA._esquecer(); w = await WA.enviar("21988887777", "x"); assert.ok(!w.ok);
+  ok("resposta 200 com erro dentro não conta como enviada");
+  global.fetch = async () => { throw new Error("offline"); }; w = await WA.enviar("21988887777", "x"); assert.ok(!w.ok && /Não foi possível falar/.test(w.detalhe)); ok("sem internet: avisa sem travar");
+  setar("WAPITO_SEND_PATH", "/enviar"); setar("WAPITO_FIELD_PHONE", "numero"); chamadas.length = 0; global.fetch = fakeApi(() => resp(200, "{}"));
+  w = await WA.enviar("21988887777", "x"); assert.ok(w.ok && chamadas[0].url.endsWith("/v1/enviar") && chamadas[0].b.numero === "5521988887777"); ok("formato fixado na Vercel é respeitado");
+  setar("WAPITO_SEND_PATH"); setar("WAPITO_FIELD_PHONE"); setar("WAPITO_API_URL");
+  const tkWa = ler("WAPITO_API_TOKEN"); setar("WAPITO_API_TOKEN");
+  assert.strictEqual(WA.cfgWapito().token, ""); assert.strictEqual(WA.configurado(), false); assert.strictEqual(WA.cfgWapito().base, "https://api.wapito.com/v1");
+  w = await WA.enviar("21988887777", "x"); assert.ok(!w.ok && /WAPITO_API_TOKEN/.test(w.detalhe)); ok("sem WAPITO_API_TOKEN: avisa qual variável falta (não existe token em arquivo)");
+  setar("WAPITO_API_TOKEN", " 'wpt_exemplo_com_aspas' "); assert.strictEqual(WA.cfgWapito().token, "wpt_exemplo_com_aspas");
+  setar("WAPITO_API_URL", "https://outra.api/v2/"); assert.strictEqual(WA.cfgWapito().base, "https://outra.api/v2");
+  setar("WAPITO_API_URL", "lixo"); assert.strictEqual(WA.cfgWapito().base, "https://api.wapito.com/v1"); setar("WAPITO_API_URL");
+  setar("WAPITO_API_TOKEN", tkWa); ok("token vem só da variável; endereço padrão da Wapito com opção de troca");
+
+  // 9. /api/health (o gvp testa depois do deploy)
+  r = await call("../api/health"); assert.strictEqual(r.code, 200); assert.ok(r.body.ok && r.body.banco === "conectado" && r.body.whatsapp === "configurado");
+  assert.ok(!JSON.stringify(r.body).includes(tkWa) && !JSON.stringify(r.body).includes("senha-teste-123")); ok("/api/health 200 quando está tudo certo (sem mostrar segredos)");
+  setar("WAPITO_API_TOKEN"); r = await call("../api/health"); assert.strictEqual(r.code, 200); assert.ok(r.body.avisos.length); setar("WAPITO_API_TOKEN", tkWa); ok("/api/health avisa sem token da Wapito (site continua no ar)");
+  { // sem banco: 503 com o motivo
+    const getRedisReal = C.getRedis; C.getRedis = () => null;
+    r = await call("../api/health"); C.getRedis = getRedisReal;
+    assert.strictEqual(r.code, 503); assert.ok(r.body.problemas[0].includes("Storage"));
+    assert.ok(!/NOT_FOUND|Internal Server Error|Application error|ENOTFOUND|fetch failed|DATABASE_URL|ENV_MISSING/.test(JSON.stringify(r.body)), "o texto não pode acionar o auto-heal do gvp");
+    C.getRedis = () => ({ get: async () => { throw new Error("x"); } }); r = await call("../api/health"); C.getRedis = getRedisReal;
+    assert.strictEqual(r.code, 503); assert.strictEqual(r.body.banco, "sem_resposta");
+    ok("/api/health 503 sem banco, com o motivo e sem acionar correções erradas do gvp");
+  }
+
+
+  // 10. Arquivos internos bloqueados no site
+  const { pathToRegexp } = (() => { try { return require("path-to-regexp"); } catch (e) { return {}; } })();
+  if (pathToRegexp) {
+    const vj = require("../vercel.json"), bloq = (u) => vj.redirects.some((x) => pathToRegexp(x.source).test(u));
+    assert.ok(bloq("/lib/whatsapp.js") && bloq("/tests/run.js") && bloq("/package.json") && !bloq("/") && !bloq("/admin") && !bloq("/api/agenda"));
+    ok("arquivos internos (lib/, tests/...) bloqueados no site");
+  }
+  assert.ok(require("../vercel.json").functions["api/admin.js"].maxDuration >= 30); ok("tempo suficiente para o 1º envio");
+  assert.ok(require("../vercel.json").rewrites.some((x) => x.source === "/health" && x.destination === "/api/health")); ok("/health também responde (o gvp testa os dois endereços)");
 
   console.log(`\n${n} verificações passaram.`);
 })().catch((e) => { console.error("\n✖ FALHOU:", e); process.exit(1); });

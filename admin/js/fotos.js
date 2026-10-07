@@ -52,7 +52,7 @@ export function botaoEnviar(texto, aoTerminar, multiplas) {
 export function escolherFoto() {
   return new Promise((resolve) => {
     const dlg = $("dlgFotos");
-    const fechar = (v) => { dlg.close(); resolve(v); };
+    const fechar = (v) => { resolve(v); dlg.close(); }; // resolve antes: o evento "close" não pode apagar a escolha
     const desenhar = () => {
       dlg.replaceChildren(
         h("h2", {}, "Escolha uma foto"),

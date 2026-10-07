@@ -11,7 +11,7 @@ export function esquecerSenha() { senha = ""; gravar(""); }
 // Nunca lança erro: falha de rede vira status 0
 export async function chamar(opt) {
   const c = typeof AbortController !== "undefined" ? new AbortController() : null;
-  const t = setTimeout(() => c && c.abort(), 25000);
+  const t = setTimeout(() => c && c.abort(), 55000); // o 1º envio pela Wapito pode levar alguns segundos
   try {
     const r = await fetch("/api/admin", {
       ...(opt || {}), cache: "no-store", signal: c ? c.signal : undefined,

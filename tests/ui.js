@@ -7,7 +7,8 @@ const esbuild = require("esbuild");
 const { FakeRedis } = require("./fake-redis");
 
 require.cache[require.resolve("@upstash/redis")] = { exports: { Redis: FakeRedis } };
-Object.assign(process.env, { UPSTASH_REDIS_REST_URL: "https://fake", UPSTASH_REDIS_REST_TOKEN: "fake", ADMIN_PASSWORD: "senha-teste-123", WAPITO_API_TOKEN: "t" });
+const { setar } = require("./ambiente-teste");
+[["UPSTASH_REDIS_REST_URL", "https://fake"], ["UPSTASH_REDIS_REST_TOKEN", "fake"], ["ADMIN_PASSWORD", "senha-teste-123"], ["WAPITO_API_TOKEN", "t"]].forEach(([k, v]) => setar(k, v));
 const adminApi = require("../api/admin");
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 

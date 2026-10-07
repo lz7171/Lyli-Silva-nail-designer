@@ -1,1 +1,4 @@
-db/
+# Não vai para o site publicado (só serve para testar no computador)
+/tests
+/LEIA-ME.md
+/.env.example
